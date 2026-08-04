@@ -48,7 +48,7 @@ app.use(
 );
 
 // SPA fallback — every remaining GET (this app's own client-side routes) serves index.html.
-app.get('*', (_req, res) => {
+app.get('/*splat', (_req, res) => {
   res.sendFile(join(browserDistFolder, 'index.html'));
 });
 
