@@ -1,0 +1,17 @@
+@if (loading()) {
+  <div class="kart-data-table-shell__status">
+    <kart-spinner label="Loading" />
+  </div>
+} @else if (errorMessage()) {
+  <kart-empty-state variant="error" title="Couldn't load this" [description]="errorMessage()">
+    <ng-content select="[retryAction]" />
+  </kart-empty-state>
+} @else if (empty()) {
+  <kart-empty-state variant="empty" [title]="emptyTitle()" [description]="emptyDescription()">
+    <ng-content select="[emptyAction]" />
+  </kart-empty-state>
+} @else {
+  <div class="kart-data-table-shell__table" role="region" tabindex="0">
+    <ng-content />
+  </div>
+}

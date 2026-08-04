@@ -1,0 +1,19 @@
+.kart-login-page {
+  max-width: 720px;
+  margin: var(--kart-spacing-xl, var(--kart-spacing-lg)) auto;
+  padding: var(--kart-spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--kart-spacing-lg);
+}
+
+.kart-login-page__brand {
+  display: flex;
+  justify-content: center;
+}
+
+.kart-login-page__panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--kart-spacing-md);
+}

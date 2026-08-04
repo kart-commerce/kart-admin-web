@@ -1,0 +1,69 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Inventory Replenishment</h1>
+  </div>
+
+  <kart-card>
+    <form [formGroup]="lookupForm" (ngSubmit)="lookup()">
+      <div class="kart-form-row">
+        <kart-form-field label="SKU" inputId="inventory-sku">
+          <input id="inventory-sku" type="text" kartInput formControlName="sku" />
+        </kart-form-field>
+        <kart-form-field label="Warehouse ID (optional)" inputId="inventory-warehouse">
+          <input id="inventory-warehouse" type="text" kartInput formControlName="warehouseId" />
+        </kart-form-field>
+      </div>
+      <div class="kart-form-actions">
+        <kart-button type="submit" variant="primary" [loading]="looking()">Look up stock</kart-button>
+      </div>
+    </form>
+
+    @if (lookupError()) {
+      <kart-alert variant="danger">{{ lookupError() }}</kart-alert>
+    }
+  </kart-card>
+
+  @if (stockLevel(); as stock) {
+    <kart-card>
+      <h2>{{ stock.sku }}</h2>
+      <p>
+        Available: <strong>{{ stock.availableQty }}</strong>
+        @if (stock.warehouseId) {
+          <span> at warehouse {{ stock.warehouseId }}</span>
+        }
+      </p>
+
+      @if (replenishSuccess()) {
+        <kart-alert variant="success">{{ replenishSuccess() }}</kart-alert>
+      }
+      @if (replenishError()) {
+        <kart-alert variant="danger">{{ replenishError() }}</kart-alert>
+      }
+
+      <form [formGroup]="replenishForm" (ngSubmit)="replenish()" *kartRequiresGrant="'inventory-replenishment'">
+        <div class="kart-form-row">
+          <kart-form-field
+            label="Warehouse ID"
+            inputId="replenish-warehouse"
+            [error]="replenishForm.controls.warehouseId.invalid && replenishForm.controls.warehouseId.touched ? 'Warehouse ID is required.' : null"
+          >
+            <input id="replenish-warehouse" type="text" kartInput formControlName="warehouseId" />
+          </kart-form-field>
+          <kart-form-field
+            label="Quantity to add"
+            inputId="replenish-qty"
+            [error]="replenishForm.controls.qtyAdded.invalid && replenishForm.controls.qtyAdded.touched ? 'Enter a quantity of at least 1.' : null"
+          >
+            <input id="replenish-qty" type="number" min="1" kartInput formControlName="qtyAdded" />
+          </kart-form-field>
+        </div>
+        <kart-form-field label="Reason" inputId="replenish-reason" hint="e.g. stocktake correction, ad hoc supplier delivery.">
+          <input id="replenish-reason" type="text" kartInput formControlName="reason" />
+        </kart-form-field>
+        <div class="kart-form-actions">
+          <kart-button type="submit" variant="primary" [loading]="replenishing()">Replenish</kart-button>
+        </div>
+      </form>
+    </kart-card>
+  }
+</div>

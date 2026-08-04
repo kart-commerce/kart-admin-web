@@ -1,0 +1,47 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Category Management</h1>
+    <kart-button variant="primary" *kartRequiresGrant="'catalog-management'" (click)="addRoot()">
+      Create top-level category
+    </kart-button>
+  </div>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && nodes().length === 0"
+    emptyTitle="No categories yet"
+    emptyDescription="Create a top-level category to start building the taxonomy."
+  >
+    @for (node of nodes(); track node.category.categoryId; let first = $first; let last = $last) {
+      <kart-category-tree-node-item
+        [node]="node"
+        [isFirst]="first"
+        [isLast]="last"
+        (toggleExpand)="toggle($event)"
+        (edit)="edit($event)"
+        (addChild)="addChild($event)"
+        (moveUp)="moveUp($event)"
+        (moveDown)="moveDown($event)"
+        (move)="openMove($event)"
+      />
+    }
+  </kart-data-table-shell>
+</div>
+
+<kart-category-form (saved)="onSaved()" />
+
+<kart-modal [open]="moveTarget() !== null" titleText="Move category" (dismiss)="closeMove()">
+  @if (moveError()) {
+    <p class="kart-category-tree__move-error">{{ moveError() }}</p>
+  }
+  <p>
+    Moving <strong>{{ moveTarget()?.category?.name }}</strong
+    >. Enter the target parent's category ID, or leave blank to move it to the root.
+  </p>
+  <input type="text" kartInput placeholder="New parent category ID (optional)" [(ngModel)]="moveNewParentId" />
+  <div modalActions>
+    <kart-button variant="secondary" (click)="closeMove()">Cancel</kart-button>
+    <kart-button variant="primary" [loading]="moveSubmitting()" (click)="submitMove()">Move</kart-button>
+  </div>
+</kart-modal>

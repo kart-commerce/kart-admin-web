@@ -1,0 +1,46 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Customer Account Assistance</h1>
+  </div>
+
+  <p class="kart-customer-assist__hint">
+    This platform has no customer directory/search — look up a known user ID (e.g. from an order
+    you're already assisting with).
+  </p>
+
+  <div class="kart-form-row">
+    <input type="text" kartInput placeholder="User ID" [(ngModel)]="userIdInput" (keyup.enter)="lookup()" name="userIdInput" />
+    <kart-button variant="primary" [loading]="loading()" (click)="lookup()">Look up</kart-button>
+  </div>
+
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+  @if (loading()) {
+    <kart-spinner label="Loading account" />
+  }
+
+  @if (profile(); as p) {
+    <kart-card>
+      <h2>{{ p.displayName ?? p.userId }}</h2>
+      <p>Email: {{ p.email ?? '—' }}</p>
+      <p>Locale: {{ p.preferences.locale ?? '—' }} · Currency: {{ p.preferences.currency ?? '—' }}</p>
+      <p>Marketing consent: <kart-badge [variant]="p.preferences.marketingConsent ? 'success' : 'neutral'">{{ p.preferences.marketingConsent ? 'Opted in' : 'Opted out' }}</kart-badge></p>
+
+      <h3>Addresses</h3>
+      @if (p.addresses.length === 0) {
+        <p>No addresses on file.</p>
+      } @else {
+        <ul class="kart-customer-assist__addresses">
+          @for (address of p.addresses; track address.addressId) {
+            <li>
+              <kart-badge [variant]="address.isDefault ? 'primary' : 'neutral'">{{ address.type }}</kart-badge>
+              {{ address.line1 }}@if (address.line2) {, {{ address.line2 }}}
+              , {{ address.city }}, {{ address.postalCode }}, {{ address.countryCode }}
+            </li>
+          }
+        </ul>
+      }
+    </kart-card>
+  }
+</div>

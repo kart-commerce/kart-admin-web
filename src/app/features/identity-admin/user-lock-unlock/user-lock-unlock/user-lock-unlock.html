@@ -1,0 +1,47 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>User Lock / Unlock</h1>
+  </div>
+
+  <div class="kart-form-row">
+    <input type="text" kartInput placeholder="User ID" [(ngModel)]="userIdInput" name="userIdInput" />
+    <kart-button variant="secondary" [loading]="loading()" (click)="lookup()">Look up (optional)</kart-button>
+  </div>
+
+  @if (lookupError()) {
+    <kart-alert variant="danger">{{ lookupError() }}</kart-alert>
+  }
+  @if (loading()) {
+    <kart-spinner label="Loading account" />
+  }
+  @if (profile(); as p) {
+    <kart-card>
+      <p>{{ p.displayName ?? p.userId }} — {{ p.email ?? 'no email on file' }}</p>
+    </kart-card>
+  }
+
+  <kart-card>
+    <p class="kart-user-lock-unlock__hint">
+      Identity Service doesn't expose current lock status via any read endpoint yet — both actions
+      below are safe to use regardless of the account's current state (locking an already-locked
+      account, or unlocking an already-unlocked one, is a no-op).
+    </p>
+
+    @if (actionSuccess()) {
+      <kart-alert variant="success">{{ actionSuccess() }}</kart-alert>
+    }
+    @if (actionError()) {
+      <kart-alert variant="danger">{{ actionError() }}</kart-alert>
+    }
+
+    <div *kartRequiresGrant="'user-suspension'">
+      <label class="kart-user-lock-unlock__reason-label" for="lock-reason">Reason (optional, lock only)</label>
+      <input id="lock-reason" type="text" kartInput [(ngModel)]="reasonInput" name="reasonInput" />
+
+      <div class="kart-form-actions">
+        <kart-button variant="secondary" [loading]="submittingAction() === 'unlock'" (click)="unlock()">Unlock</kart-button>
+        <kart-button variant="danger" [loading]="submittingAction() === 'lock'" (click)="lock()">Lock</kart-button>
+      </div>
+    </div>
+  </kart-card>
+</div>

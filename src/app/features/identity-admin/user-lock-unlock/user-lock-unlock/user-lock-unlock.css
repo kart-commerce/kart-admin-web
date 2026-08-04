@@ -1,0 +1,11 @@
+.kart-user-lock-unlock__hint {
+  color: var(--kart-color-text-muted);
+  font-size: var(--kart-font-size-caption);
+}
+
+.kart-user-lock-unlock__reason-label {
+  display: block;
+  font-size: var(--kart-font-size-caption);
+  font-weight: var(--kart-font-weight-medium);
+  margin-bottom: var(--kart-spacing-xs);
+}

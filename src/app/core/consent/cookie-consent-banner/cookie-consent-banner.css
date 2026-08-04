@@ -1,0 +1,21 @@
+.kart-cookie-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kart-spacing-md);
+  flex-wrap: wrap;
+  padding: var(--kart-spacing-md) var(--kart-spacing-lg);
+  background-color: var(--kart-color-surface);
+  border-top: 1px solid var(--kart-color-border);
+}
+
+.kart-cookie-banner__actions {
+  display: flex;
+  gap: var(--kart-spacing-sm);
+  flex-wrap: wrap;
+}

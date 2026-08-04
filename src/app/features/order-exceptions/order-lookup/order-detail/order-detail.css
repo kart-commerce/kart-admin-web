@@ -1,0 +1,5 @@
+.kart-order-detail__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--kart-spacing-sm);
+}

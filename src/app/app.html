@@ -1,0 +1,36 @@
+@if (authService.session().authenticated) {
+  <header class="kart-header">
+    <a class="kart-header__logo" routerLink="/" aria-label="Kart Admin home">
+      <kart-logo />
+    </a>
+
+    <nav class="kart-header__nav" aria-label="Primary">
+      @if (grantService.isAdmin()) {
+        <a routerLink="/catalog" routerLinkActive="kart-header__link--active">Catalog</a>
+        <a routerLink="/order-exceptions" routerLinkActive="kart-header__link--active">Orders</a>
+        <a routerLink="/identity-admin" routerLinkActive="kart-header__link--active">Identity</a>
+        <a routerLink="/audit-compliance" routerLinkActive="kart-header__link--active">Audit &amp; Compliance</a>
+      }
+      @if (grantService.isSupportAgent()) {
+        <a routerLink="/support-console" routerLinkActive="kart-header__link--active">Support Console</a>
+      }
+    </nav>
+
+    <div class="kart-header__account">
+      <kart-theme-toggle />
+      <button type="button" class="kart-header__link-button" (click)="consentService.openPreferenceCenter()">
+        Cookie Preferences
+      </button>
+      <button type="button" class="kart-header__link-button" (click)="logout()">Log out</button>
+    </div>
+  </header>
+}
+
+<main [class.kart-main--unauthenticated]="!authService.session().authenticated">
+  <router-outlet />
+</main>
+
+<kart-idle-warning-modal />
+<kart-absolute-cap-warning-modal />
+<kart-cookie-consent-banner />
+<kart-cookie-preference-center />

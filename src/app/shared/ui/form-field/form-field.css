@@ -1,0 +1,24 @@
+.kart-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kart-spacing-xs);
+  margin-bottom: var(--kart-spacing-md);
+}
+
+.kart-form-field__label {
+  font-size: var(--kart-font-size-caption);
+  font-weight: var(--kart-font-weight-medium);
+  color: var(--kart-color-text);
+}
+
+.kart-form-field__error {
+  margin: 0;
+  font-size: var(--kart-font-size-caption);
+  color: var(--kart-color-danger);
+}
+
+.kart-form-field__hint {
+  margin: 0;
+  font-size: var(--kart-font-size-caption);
+  color: var(--kart-color-text-muted);
+}

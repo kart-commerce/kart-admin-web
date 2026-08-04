@@ -1,0 +1,107 @@
+name: CI
+
+# Calls kart-devops's reusable workflows rather than hardcoding CI steps
+# (kart-conventions.md: hardcoding per-service CI guarantees drift across
+# repos) — the same pattern every kart-<name>-service repo and kart-web use.
+#
+# Provenance note: the codegen-verify jobs below assume the openapi-generator-cli
+# toolchain (Java-based) is available in the CI runner, via kart-devops's
+# reusable workflow. The clients under src/app/core/http/generated were
+# hand-authored in that generator's output shape in this development
+# environment (no JVM/network available here to run the real tool — see
+# core/http/generated/README.md) — the first real CI run may show a diff
+# against these hand-authored files that needs reconciling.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  app:
+    name: Lint, test, build (Angular App CI)
+    uses: kart-commerce/kart-devops/.github/workflows/angular-app-ci.yml@main
+    with:
+      node-version: '22.x'
+      working-directory: .
+      run-docker-build: true
+
+  admin-client-codegen:
+    name: Verify generated admin-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-admin-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/admin/v1
+      fail-on-diff: true
+
+  order-client-codegen:
+    name: Verify generated order-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-order-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/order/v1
+      fail-on-diff: true
+
+  payment-client-codegen:
+    name: Verify generated payment-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-payment-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/payment/v1
+      fail-on-diff: true
+
+  analytics-client-codegen:
+    name: Verify generated analytics-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-analytics-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/analytics/v1
+      fail-on-diff: true
+
+  category-client-codegen:
+    name: Verify generated category-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-category-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/category/v1
+      fail-on-diff: true
+
+  product-client-codegen:
+    name: Verify generated product-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-product-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/product/v1
+      fail-on-diff: true
+
+  search-client-codegen:
+    name: Verify generated search-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-search-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/search/v1
+      fail-on-diff: true
+
+  inventory-client-codegen:
+    name: Verify generated inventory-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-inventory-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/inventory/v1
+      fail-on-diff: true
+
+  user-client-codegen:
+    name: Verify generated user-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-user-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/user/v1
+      fail-on-diff: true
+
+  order-returns-client-codegen:
+    name: Verify generated (assumed) ReturnRequest client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-order-service-returns.assumed.api-contract.yaml
+      output-dir: src/app/core/http/generated/order-returns/v1
+      fail-on-diff: true

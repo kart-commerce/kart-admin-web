@@ -1,0 +1,60 @@
+<kart-modal
+  [open]="context() !== null"
+  [titleText]="context()?.mode === 'create' ? 'Create product' : 'Edit product'"
+  (dismiss)="close()"
+>
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    @if (context()?.mode === 'create') {
+      <kart-form-field label="SKU" inputId="product-form-sku" hint="Leave blank to let the catalog assign one, if supported.">
+        <input id="product-form-sku" type="text" kartInput formControlName="sku" />
+      </kart-form-field>
+    }
+
+    <kart-form-field
+      label="Name"
+      inputId="product-form-name"
+      [error]="form.controls.name.invalid && form.controls.name.touched ? 'Enter a product name (max 200 characters).' : null"
+    >
+      <input id="product-form-name" type="text" kartInput formControlName="name" />
+    </kart-form-field>
+
+    <kart-form-field label="Description" inputId="product-form-description">
+      <textarea id="product-form-description" kartInput formControlName="description" rows="3"></textarea>
+    </kart-form-field>
+
+    <kart-form-field
+      label="Category ID"
+      inputId="product-form-category"
+      [error]="form.controls.categoryId.invalid && form.controls.categoryId.touched ? 'Category ID is required.' : null"
+    >
+      <input id="product-form-category" type="text" kartInput formControlName="categoryId" />
+    </kart-form-field>
+
+    <div class="kart-form-row">
+      <kart-form-field
+        label="Price"
+        inputId="product-form-price"
+        [error]="form.controls.priceAmount.invalid && form.controls.priceAmount.touched ? 'Enter a price greater than 0.' : null"
+      >
+        <input id="product-form-price" type="number" step="0.01" kartInput formControlName="priceAmount" />
+      </kart-form-field>
+
+      <kart-form-field
+        label="Currency"
+        inputId="product-form-currency"
+        [error]="form.controls.priceCurrency.invalid && form.controls.priceCurrency.touched ? 'Enter a 3-letter currency code.' : null"
+      >
+        <input id="product-form-currency" type="text" kartInput formControlName="priceCurrency" maxlength="3" />
+      </kart-form-field>
+    </div>
+  </form>
+
+  <div modalActions>
+    <kart-button variant="secondary" (click)="close()">Cancel</kart-button>
+    <kart-button variant="primary" [loading]="submitting()" (click)="submit()">Save</kart-button>
+  </div>
+</kart-modal>

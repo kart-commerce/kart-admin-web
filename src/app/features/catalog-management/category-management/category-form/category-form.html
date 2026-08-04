@@ -1,0 +1,24 @@
+<kart-modal
+  [open]="context() !== null"
+  [titleText]="context()?.mode === 'create' ? 'Create category' : 'Rename category'"
+  (dismiss)="close()"
+>
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <kart-form-field
+      label="Name"
+      inputId="category-form-name"
+      [error]="form.controls.name.invalid && form.controls.name.touched ? 'Enter a category name (max 200 characters).' : null"
+    >
+      <input id="category-form-name" type="text" kartInput formControlName="name" />
+    </kart-form-field>
+  </form>
+
+  <div modalActions>
+    <kart-button variant="secondary" (click)="close()">Cancel</kart-button>
+    <kart-button variant="primary" [loading]="submitting()" (click)="submit()">Save</kart-button>
+  </div>
+</kart-modal>

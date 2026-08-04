@@ -1,0 +1,37 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Welcome back</h1>
+  </div>
+
+  <div class="kart-dashboard__grid">
+    @if (grantService.isAdmin()) {
+      <kart-card>
+        <h2>Catalog &amp; Inventory</h2>
+        <p>Products, categories, coupons, and inventory replenishment.</p>
+        <a routerLink="/catalog/products">Manage products</a>
+      </kart-card>
+      <kart-card>
+        <h2>Orders &amp; Fulfillment</h2>
+        <p>Look up orders and resolve fulfillment exceptions.</p>
+        <a routerLink="/order-exceptions/orders">Look up an order</a>
+      </kart-card>
+      <kart-card>
+        <h2>Identity Administration</h2>
+        <p>Lock/unlock users and manage permission grants.</p>
+        <a routerLink="/identity-admin/users">Manage users</a>
+      </kart-card>
+      <kart-card>
+        <h2>Audit &amp; Compliance</h2>
+        <p>Audit trail, analytics dashboards, and privacy requests.</p>
+        <a routerLink="/audit-compliance/audit-trail">View audit trail</a>
+      </kart-card>
+    }
+    @if (grantService.isSupportAgent()) {
+      <kart-card>
+        <h2>Support Console</h2>
+        <p>Order lookup, customer assistance, and the Refund Requests queue.</p>
+        <a routerLink="/support-console/orders">Look up an order</a>
+      </kart-card>
+    }
+  </div>
+</div>

@@ -1,0 +1,83 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Order Lookup &amp; Assisted Actions</h1>
+  </div>
+
+  <kart-card>
+    <h2>Find an order</h2>
+    <div class="kart-form-row">
+      <input type="text" kartInput placeholder="Order ID" [(ngModel)]="orderIdInput" (keyup.enter)="lookupOrder()" name="orderIdInput" />
+      <kart-button variant="primary" [loading]="loadingOrder()" (click)="lookupOrder()">Look up</kart-button>
+    </div>
+
+    @if (orderError()) {
+      <kart-alert variant="danger">{{ orderError() }}</kart-alert>
+    }
+    @if (loadingOrder()) {
+      <kart-spinner label="Loading order" />
+    }
+
+    @if (order(); as o) {
+      <div class="kart-support-order__summary">
+        <kart-badge>{{ o.status }}</kart-badge>
+        <span>Customer: {{ o.userId }}</span>
+        <span>Placed: {{ o.createdAt | date: 'medium' }}</span>
+        <span>Total: {{ o.totalAmount.amount | number: '1.2-2' }} {{ o.totalAmount.currency }}</span>
+      </div>
+    }
+  </kart-card>
+
+  <kart-card>
+    <h2>Initiate a refund</h2>
+    <p class="kart-support-order__hint">
+      Enter the order's associated Payment Intent ID (from the customer's support ticket) to review
+      the amount already captured/refunded before initiating a new refund.
+    </p>
+
+    <form [formGroup]="refundForm">
+      <div class="kart-form-row">
+        <kart-form-field
+          label="Payment Intent ID"
+          inputId="refund-payment-intent-id"
+          [error]="refundForm.controls.paymentIntentId.invalid && refundForm.controls.paymentIntentId.touched ? 'Payment Intent ID is required.' : null"
+        >
+          <input id="refund-payment-intent-id" type="text" kartInput formControlName="paymentIntentId" />
+        </kart-form-field>
+        <kart-button variant="secondary" [loading]="loadingPayment()" (click)="lookupPaymentIntent()">Look up</kart-button>
+      </div>
+
+      @if (paymentError()) {
+        <kart-alert variant="danger">{{ paymentError() }}</kart-alert>
+      }
+
+      @if (paymentIntent(); as pi) {
+        <p>
+          Captured: {{ pi.capturedAmount.amount | number: '1.2-2' }} {{ pi.capturedAmount.currency }} — Already refunded:
+          {{ pi.totalRefunded | number: '1.2-2' }}
+          @if (pi.disputed) {
+            <kart-badge variant="danger">Disputed</kart-badge>
+          }
+        </p>
+
+        @if (refundSuccess()) {
+          <kart-alert variant="success">{{ refundSuccess() }}</kart-alert>
+        }
+        @if (refundError()) {
+          <kart-alert variant="danger">{{ refundError() }}</kart-alert>
+        }
+
+        <kart-form-field
+          label="Refund amount"
+          inputId="refund-amount"
+          [error]="refundForm.controls.amount.invalid && refundForm.controls.amount.touched ? 'Enter a refund amount greater than 0.' : null"
+        >
+          <input id="refund-amount" type="number" step="0.01" kartInput formControlName="amount" />
+        </kart-form-field>
+
+        <div class="kart-form-actions">
+          <kart-button variant="primary" [loading]="refunding()" (click)="submitRefund()">Initiate refund</kart-button>
+        </div>
+      }
+    </form>
+  </kart-card>
+</div>

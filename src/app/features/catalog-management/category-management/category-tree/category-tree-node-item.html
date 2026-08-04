@@ -1,0 +1,46 @@
+<div class="kart-category-node">
+  <button
+    type="button"
+    class="kart-category-node__toggle"
+    (click)="toggleExpand.emit(node())"
+    [attr.aria-expanded]="node().expanded"
+    [attr.aria-label]="node().expanded ? 'Collapse ' + node().category.name : 'Expand ' + node().category.name"
+  >
+    {{ node().expanded ? '▾' : '▸' }}
+  </button>
+
+  <span class="kart-category-node__name">{{ node().category.name }}</span>
+  <kart-badge [variant]="node().category.status === 'active' ? 'success' : 'neutral'">{{ node().category.status }}</kart-badge>
+
+  <div class="kart-category-node__actions" *kartRequiresGrant="'catalog-management'">
+    <button type="button" class="kart-category-node__icon-button" [disabled]="isFirst()" (click)="moveUp.emit(node())" aria-label="Move up">↑</button>
+    <button type="button" class="kart-category-node__icon-button" [disabled]="isLast()" (click)="moveDown.emit(node())" aria-label="Move down">↓</button>
+    <kart-button variant="secondary" (click)="edit.emit(node())">Edit</kart-button>
+    <kart-button variant="secondary" (click)="addChild.emit(node())">Add subcategory</kart-button>
+    <kart-button variant="secondary" (click)="move.emit(node())">Move</kart-button>
+  </div>
+</div>
+
+@if (node().expanded) {
+  <div class="kart-category-node__children">
+    @if (node().loadingChildren) {
+      <kart-spinner size="sm" label="Loading subcategories" />
+    } @else if (node().children && node().children!.length === 0) {
+      <p class="kart-category-node__empty">No subcategories.</p>
+    } @else {
+      @for (child of node().children; track child.category.categoryId; let first = $first; let last = $last) {
+        <kart-category-tree-node-item
+          [node]="child"
+          [isFirst]="first"
+          [isLast]="last"
+          (toggleExpand)="toggleExpand.emit($event)"
+          (edit)="edit.emit($event)"
+          (addChild)="addChild.emit($event)"
+          (moveUp)="moveUp.emit($event)"
+          (moveDown)="moveDown.emit($event)"
+          (move)="move.emit($event)"
+        />
+      }
+    }
+  </div>
+}

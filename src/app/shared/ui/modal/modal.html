@@ -1,0 +1,21 @@
+@if (open()) {
+  <div class="kart-modal__backdrop">
+    <button type="button" class="kart-modal__backdrop-dismiss" (click)="onBackdropClick()" aria-label="Close dialog"></button>
+    <div
+      #dialog
+      class="kart-modal"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      [attr.aria-labelledby]="'kart-modal-title'"
+    >
+      <h2 class="kart-modal__title" id="kart-modal-title">{{ titleText() }}</h2>
+      <div class="kart-modal__body">
+        <ng-content />
+      </div>
+      <div class="kart-modal__actions">
+        <ng-content select="[modalActions]" />
+      </div>
+    </div>
+  </div>
+}

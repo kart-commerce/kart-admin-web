@@ -1,0 +1,59 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Order Lookup</h1>
+  </div>
+
+  <div class="kart-form-row">
+    <input
+      type="text"
+      kartInput
+      placeholder="Order ID"
+      [(ngModel)]="orderIdInput"
+      (keyup.enter)="lookup()"
+    />
+    <kart-button variant="primary" [loading]="loading()" (click)="lookup()">Look up</kart-button>
+  </div>
+
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+
+  @if (loading()) {
+    <kart-spinner label="Loading order" />
+  }
+
+  @if (order(); as o) {
+    <kart-card>
+      <div class="kart-order-detail__summary">
+        <h2>Order {{ o.orderId }}</h2>
+        <kart-badge [variant]="statusBadgeVariant[o.status]">{{ o.status }}</kart-badge>
+      </div>
+      <p>Customer: {{ o.userId }}</p>
+      <p>Placed: {{ o.createdAt | date: 'medium' }}</p>
+      <p>Total: {{ o.totalAmount.amount | number: '1.2-2' }} {{ o.totalAmount.currency }}</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Qty</th>
+            <th>Unit price</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of o.items; track item.sku) {
+            <tr>
+              <td>{{ item.sku }}</td>
+              <td>{{ item.qty }}</td>
+              <td>{{ item.unitPrice.amount | number: '1.2-2' }} {{ item.unitPrice.currency }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </kart-card>
+
+    @if (o.status === 'FulfillmentException') {
+      <kart-resolve-fulfillment-exception [order]="o" (resolved)="onResolved($event)" />
+    }
+  }
+</div>

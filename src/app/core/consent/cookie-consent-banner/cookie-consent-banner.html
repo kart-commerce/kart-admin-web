@@ -1,0 +1,13 @@
+@if (consentService.isStale()) {
+  <div class="kart-cookie-banner" role="region" aria-label="Cookie consent">
+    <p>
+      This internal tool uses only strictly-necessary cookies for your session (no consent
+      required for those). Everything else is off by default.
+    </p>
+    <div class="kart-cookie-banner__actions">
+      <kart-button variant="secondary" (click)="rejectNonEssential()">Reject Non-Essential</kart-button>
+      <kart-button variant="secondary" (click)="managePreferences()">Manage Preferences</kart-button>
+      <kart-button variant="primary" (click)="acceptAll()">Accept All</kart-button>
+    </div>
+  </div>
+}

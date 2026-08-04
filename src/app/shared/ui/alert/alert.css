@@ -1,0 +1,30 @@
+.kart-alert {
+  padding: var(--kart-spacing-sm) var(--kart-spacing-md);
+  border-radius: var(--kart-radius-md);
+  border: 1px solid var(--kart-color-border);
+  font-size: var(--kart-font-size-body);
+}
+
+.kart-alert--danger {
+  background-color: var(--kart-palette-danger-100);
+  border-color: var(--kart-color-danger);
+  color: var(--kart-palette-danger-600);
+}
+
+.kart-alert--success {
+  background-color: var(--kart-palette-success-100);
+  border-color: var(--kart-color-success);
+  color: var(--kart-palette-success-600);
+}
+
+.kart-alert--warning {
+  background-color: var(--kart-palette-warning-100);
+  border-color: var(--kart-color-warning);
+  color: var(--kart-palette-warning-600);
+}
+
+.kart-alert--info {
+  background-color: var(--kart-palette-info-100);
+  border-color: var(--kart-color-info);
+  color: var(--kart-palette-info-600);
+}

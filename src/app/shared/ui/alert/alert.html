@@ -1,0 +1,9 @@
+<div
+  class="kart-alert"
+  [class.kart-alert--danger]="variant() === 'danger'"
+  [class.kart-alert--success]="variant() === 'success'"
+  [class.kart-alert--info]="variant() === 'info'"
+  [class.kart-alert--warning]="variant() === 'warning'"
+>
+  <ng-content />
+</div>

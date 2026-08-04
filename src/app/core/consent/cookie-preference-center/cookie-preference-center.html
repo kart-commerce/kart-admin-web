@@ -1,0 +1,49 @@
+<kart-modal [open]="consentService.preferenceCenterOpen()" titleText="Cookie preferences" (dismiss)="consentService.closePreferenceCenter()">
+  <p>
+    This internal tool only ever sets the <strong>Necessary</strong> category below today — the
+    other categories are shown for policy-consistency with the rest of the platform and take
+    effect immediately if this app ever adds that kind of cookie.
+  </p>
+
+  <ul class="kart-cookie-prefs__list">
+    <li>
+      <div class="kart-cookie-prefs__row">
+        <strong>Necessary</strong>
+        <span>Always on</span>
+      </div>
+      <p>Session cookie, CSRF token, this consent record itself. Exempt from consent (GDPR/ePrivacy).</p>
+    </li>
+    <li>
+      <div class="kart-cookie-prefs__row">
+        <strong>Analytics</strong>
+        <label>
+          <input type="checkbox" [checked]="draft.analytics" (change)="toggle('analytics')" />
+          Allow
+        </label>
+      </div>
+    </li>
+    <li>
+      <div class="kart-cookie-prefs__row">
+        <strong>Marketing</strong>
+        <label>
+          <input type="checkbox" [checked]="draft.marketing" (change)="toggle('marketing')" />
+          Allow
+        </label>
+      </div>
+    </li>
+    <li>
+      <div class="kart-cookie-prefs__row">
+        <strong>Preference</strong>
+        <label>
+          <input type="checkbox" [checked]="draft.preference" (change)="toggle('preference')" />
+          Allow
+        </label>
+      </div>
+    </li>
+  </ul>
+
+  <div modalActions>
+    <kart-button variant="secondary" (click)="consentService.closePreferenceCenter()">Cancel</kart-button>
+    <kart-button variant="primary" (click)="save()">Save preferences</kart-button>
+  </div>
+</kart-modal>

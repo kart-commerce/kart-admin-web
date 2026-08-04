@@ -1,0 +1,4 @@
+.kart-page kart-card {
+  display: block;
+  margin-bottom: var(--kart-spacing-md);
+}

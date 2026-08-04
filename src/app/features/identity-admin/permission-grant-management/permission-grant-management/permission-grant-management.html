@@ -1,0 +1,69 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Permission Grant Management</h1>
+  </div>
+
+  <kart-card>
+    <h2>Issue a grant</h2>
+    @if (issueError()) {
+      <kart-alert variant="danger">{{ issueError() }}</kart-alert>
+    }
+    <form [formGroup]="issueForm" (ngSubmit)="issue()">
+      <div class="kart-form-row">
+        <kart-form-field
+          label="Principal ID"
+          inputId="grant-principal-id"
+          [error]="issueForm.controls.principalId.invalid && issueForm.controls.principalId.touched ? 'Principal ID is required.' : null"
+        >
+          <input id="grant-principal-id" type="text" kartInput formControlName="principalId" />
+        </kart-form-field>
+
+        <kart-form-field label="Category" inputId="grant-category">
+          <select id="grant-category" kartInput formControlName="category">
+            @for (category of categories; track category) {
+              <option [value]="category">{{ category }}</option>
+            }
+          </select>
+        </kart-form-field>
+      </div>
+      <div class="kart-form-actions">
+        <kart-button type="submit" variant="primary" [loading]="issuing()">Issue grant</kart-button>
+      </div>
+    </form>
+  </kart-card>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && grants().length === 0"
+    emptyTitle="No live grants"
+    emptyDescription="Issue a grant above to give a principal access to a category."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Principal</th>
+          <th>Category</th>
+          <th>Granted at</th>
+          <th>Granted by</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (grant of grants(); track grant.grantId) {
+          <tr>
+            <td>{{ grant.principalId }}</td>
+            <td><kart-badge variant="primary">{{ grant.category }}</kart-badge></td>
+            <td>{{ grant.grantedAt | date: 'medium' }}</td>
+            <td>{{ grant.grantedBy }}</td>
+            <td>
+              <kart-button variant="danger" [loading]="revokingGrantId() === grant.grantId" (click)="revoke(grant)">
+                Revoke
+              </kart-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </kart-data-table-shell>
+</div>

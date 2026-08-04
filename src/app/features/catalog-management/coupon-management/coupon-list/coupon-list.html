@@ -1,0 +1,52 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Coupon Management</h1>
+    <kart-button variant="primary" *kartRequiresGrant="'coupon-issuance'" (click)="create()">Create coupon</kart-button>
+  </div>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && coupons().length === 0"
+    emptyTitle="No coupons yet"
+    emptyDescription="Create a coupon to start a promotion."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Per-user cap</th>
+          <th>Global cap</th>
+          <th>Valid from</th>
+          <th>Valid until</th>
+          <th>Redemptions</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (coupon of coupons(); track coupon.couponCode) {
+          <tr>
+            <td>{{ coupon.couponCode }}</td>
+            <td>{{ coupon.perUserCap ?? '—' }}</td>
+            <td>{{ coupon.globalCap ?? '—' }}</td>
+            <td>{{ coupon.validFrom | date: 'medium' }}</td>
+            <td>{{ coupon.validUntil | date: 'medium' }}</td>
+            <td>{{ coupon.totalRedemptions }}</td>
+            <td *kartRequiresGrant="'coupon-issuance'">
+              <kart-button
+                variant="danger"
+                [disabled]="isExpired(coupon)"
+                [loading]="deactivatingCode() === coupon.couponCode"
+                (click)="deactivate(coupon)"
+              >
+                {{ isExpired(coupon) ? 'Expired' : 'Deactivate' }}
+              </kart-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </kart-data-table-shell>
+</div>
+
+<kart-coupon-form (saved)="load()" />

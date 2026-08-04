@@ -1,0 +1,41 @@
+:host {
+  display: inline-block;
+}
+
+.kart-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kart-spacing-xs);
+  padding: 2px var(--kart-spacing-sm);
+  border-radius: var(--kart-radius-pill);
+  font-size: var(--kart-font-size-caption);
+  font-weight: var(--kart-font-weight-medium);
+  line-height: var(--kart-line-height-body);
+  white-space: nowrap;
+}
+
+.kart-badge--primary {
+  background-color: var(--kart-palette-primary-100);
+  color: var(--kart-palette-primary-700);
+}
+
+.kart-badge--success {
+  background-color: var(--kart-palette-success-100);
+  color: var(--kart-palette-success-600);
+}
+
+.kart-badge--warning {
+  background-color: var(--kart-palette-warning-100);
+  color: var(--kart-palette-warning-600);
+}
+
+.kart-badge--danger {
+  background-color: var(--kart-palette-danger-100);
+  color: var(--kart-palette-danger-600);
+}
+
+.kart-badge--neutral {
+  background-color: var(--kart-color-surface);
+  color: var(--kart-color-text-muted);
+  border: 1px solid var(--kart-color-border);
+}

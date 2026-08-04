@@ -1,0 +1,64 @@
+<kart-modal [open]="isOpen()" titleText="Create coupon" (dismiss)="close()">
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <kart-form-field
+      label="Coupon code"
+      inputId="coupon-form-code"
+      hint="Letters, numbers, - and _ only."
+      [error]="form.controls.couponCode.invalid && form.controls.couponCode.touched ? 'Enter a valid coupon code (3-40 characters).' : null"
+    >
+      <input id="coupon-form-code" type="text" kartInput formControlName="couponCode" />
+    </kart-form-field>
+
+    <div class="kart-form-row">
+      <kart-form-field
+        label="Discount amount"
+        inputId="coupon-form-amount"
+        [error]="form.controls.discountAmount.invalid && form.controls.discountAmount.touched ? 'Enter a discount amount greater than 0.' : null"
+      >
+        <input id="coupon-form-amount" type="number" step="0.01" kartInput formControlName="discountAmount" />
+      </kart-form-field>
+      <kart-form-field
+        label="Currency"
+        inputId="coupon-form-currency"
+        [error]="form.controls.discountCurrency.invalid && form.controls.discountCurrency.touched ? 'Enter a 3-letter currency code.' : null"
+      >
+        <input id="coupon-form-currency" type="text" kartInput formControlName="discountCurrency" maxlength="3" />
+      </kart-form-field>
+    </div>
+
+    <div class="kart-form-row">
+      <kart-form-field label="Per-user redemption cap" inputId="coupon-form-per-user-cap" hint="Leave blank for no cap.">
+        <input id="coupon-form-per-user-cap" type="number" kartInput formControlName="perUserCap" />
+      </kart-form-field>
+      <kart-form-field label="Global redemption cap" inputId="coupon-form-global-cap" hint="Leave blank for no cap.">
+        <input id="coupon-form-global-cap" type="number" kartInput formControlName="globalCap" />
+      </kart-form-field>
+    </div>
+
+    <div class="kart-form-row">
+      <kart-form-field
+        label="Valid from"
+        inputId="coupon-form-valid-from"
+        [error]="form.controls.validFrom.invalid && form.controls.validFrom.touched ? 'Required.' : null"
+      >
+        <input id="coupon-form-valid-from" type="datetime-local" kartInput formControlName="validFrom" />
+      </kart-form-field>
+      <kart-form-field
+        label="Valid until"
+        inputId="coupon-form-valid-until"
+        [error]="form.controls.validUntil.invalid && form.controls.validUntil.touched ? 'Required.' : null"
+      >
+        <input id="coupon-form-valid-until" type="datetime-local" kartInput formControlName="validUntil" />
+      </kart-form-field>
+    </div>
+  </form>
+
+  <div modalActions>
+    <kart-button variant="secondary" (click)="close()">Cancel</kart-button>
+    <kart-button variant="primary" [loading]="submitting()" (click)="submit()">Create</kart-button>
+  </div>
+</kart-modal>

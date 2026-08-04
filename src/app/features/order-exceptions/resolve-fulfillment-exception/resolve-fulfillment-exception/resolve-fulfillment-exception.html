@@ -1,0 +1,20 @@
+<kart-card>
+  <h2>Fulfillment exception</h2>
+  <p>
+    This order is held because a downstream fulfillment step failed. Retry resumes shipping; Cancel
+    releases any held stock and refunds the customer.
+  </p>
+
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+
+  <div class="kart-form-actions">
+    <kart-button variant="secondary" [loading]="submittingAction() === 'cancel'" (click)="resolve('cancel')">
+      Cancel order
+    </kart-button>
+    <kart-button variant="primary" [loading]="submittingAction() === 'retry'" (click)="resolve('retry')">
+      Retry fulfillment
+    </kart-button>
+  </div>
+</kart-card>

@@ -1,0 +1,7 @@
+:host {
+  display: inline-block;
+}
+
+:host:has(.kart-button--full-width) {
+  display: block;
+}

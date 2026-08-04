@@ -1,0 +1,138 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Analytics Dashboards</h1>
+    <nav class="kart-audit__tabs" aria-label="Audit and compliance sections">
+      <a routerLink="/audit-compliance/audit-trail" routerLinkActive="kart-audit__tab--active">Audit Trail</a>
+      <a routerLink="/audit-compliance/analytics" routerLinkActive="kart-audit__tab--active">Analytics</a>
+    </nav>
+  </div>
+
+  <div class="kart-form-row">
+    <select kartInput [(ngModel)]="selectedDashboard" name="selectedDashboard">
+      @for (key of dashboardKeys; track key) {
+        <option [value]="key">{{ dashboardLabels[key] }}</option>
+      }
+    </select>
+    <input type="date" kartInput [(ngModel)]="fromDate" name="fromDate" />
+    <input type="date" kartInput [(ngModel)]="toDate" name="toDate" />
+    <kart-button variant="primary" [loading]="loading()" (click)="load()">Load</kart-button>
+  </div>
+
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+  @if (loading()) {
+    <kart-spinner label="Loading dashboard" />
+  }
+
+  @if (result(); as r) {
+    @if (r.isProvisional) {
+      <kart-alert variant="warning">
+        These figures are provisional — nightly reconciliation hasn't finalized this window yet.
+      </kart-alert>
+    }
+
+    @switch (selectedDashboard) {
+      @case ('order-conversion-funnel') {
+        <table>
+          <thead><tr><th>Stage</th><th>Count</th><th>Drop-off</th></tr></thead>
+          <tbody>
+            @for (stage of r.stages; track stage.stage) {
+              <tr>
+                <td>{{ stage.stage }}</td>
+                <td>{{ stage.count }}</td>
+                <td>{{ stage.dropOffRate !== null ? (stage.dropOffRate | number: '1.0-2') : '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      @case ('revenue') {
+        <table>
+          <thead><tr><th>Period</th><th>Revenue</th><th>Orders</th></tr></thead>
+          <tbody>
+            @for (row of r.series; track row.bucketStart) {
+              <tr>
+                <td>{{ row.bucketStart }}</td>
+                <td>{{ row.revenue.amount | number: '1.2-2' }} {{ row.revenue.currency }}</td>
+                <td>{{ row.orderCount }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      @case ('fulfillment-performance') {
+        <div class="kart-analytics__stats">
+          <div><kart-badge variant="primary">Time to ship</kart-badge> p50 {{ r.timeToShip.p50Hours }}h · p95 {{ r.timeToShip.p95Hours }}h · p99 {{ r.timeToShip.p99Hours }}h</div>
+          <div><kart-badge variant="primary">Time to deliver</kart-badge> p50 {{ r.timeToDeliver.p50Hours }}h · p95 {{ r.timeToDeliver.p95Hours }}h · p99 {{ r.timeToDeliver.p99Hours }}h</div>
+        </div>
+      }
+      @case ('inventory-movement') {
+        <div class="kart-analytics__stats">
+          <div>Reserved: {{ r.reserved }}</div>
+          <div>Reservation failed: {{ r.reservationFailed }}</div>
+          <div>Released: {{ r.released }}</div>
+          <div>Replenished: {{ r.replenished }}</div>
+        </div>
+      }
+      @case ('catalog-pricing') {
+        <div class="kart-analytics__stats">
+          <div>Products created: {{ r.productsCreated }}</div>
+          <div>Price changes: {{ r.priceChanges }}</div>
+          <div>Category updates: {{ r.categoryUpdates }}</div>
+        </div>
+      }
+      @case ('promotions-effectiveness') {
+        <div class="kart-analytics__stats">
+          <div>Coupons redeemed: {{ r.couponsRedeemed }}</div>
+          <div>Quotes issued: {{ r.quotesIssued }}</div>
+          <div>Redemption rate: {{ r.redemptionRate | number: '1.0-2' }}</div>
+          <div>Attributable volume: {{ r.attributableOrderVolume.amount | number: '1.2-2' }} {{ r.attributableOrderVolume.currency }}</div>
+        </div>
+      }
+      @case ('user-growth') {
+        <div class="kart-analytics__stats">
+          <div>Signups: {{ r.signups }}</div>
+          <div>Sessions created: {{ r.sessionsCreated }}</div>
+          <div>Profile changes: {{ r.profileChanges }}</div>
+        </div>
+      }
+      @case ('reviews-ratings') {
+        <div class="kart-analytics__stats">
+          <div>Review count: {{ r.reviewCount }}</div>
+          @for (entry of objectEntries(r.ratingDistribution); track entry[0]) {
+            <div>{{ entry[0] }}★: {{ entry[1] }}</div>
+          }
+        </div>
+      }
+      @case ('admin-audit') {
+        <table>
+          <thead><tr><th>When</th><th>Action</th><th>Admin</th></tr></thead>
+          <tbody>
+            @for (action of r.actions; track action.occurredAt + action.adminId) {
+              <tr>
+                <td>{{ action.occurredAt }}</td>
+                <td>{{ action.actionType }}</td>
+                <td>{{ action.adminId }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      @case ('notification-delivery') {
+        <table>
+          <thead><tr><th>Channel</th><th>Sent</th><th>Price alerts</th></tr></thead>
+          <tbody>
+            @for (row of r.byChannel; track row.channel) {
+              <tr>
+                <td>{{ row.channel }}</td>
+                <td>{{ row.sent }}</td>
+                <td>{{ row.priceAlertsTriggered }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  }
+</div>

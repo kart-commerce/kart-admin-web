@@ -1,0 +1,192 @@
+/*
+ * Global base styles. Design tokens (--kart-*) come from the `design-system`
+ * package (node_modules/design-system/src/styles/tokens/*.css, wired in
+ * angular.json's "styles" array) — no color/spacing/typography value is
+ * hardcoded here or in any shared/ui component; everything reads a token.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background-color: var(--kart-color-background);
+  color: var(--kart-color-text);
+  font-family: var(--kart-font-family-base);
+  font-size: var(--kart-font-size-body);
+  line-height: var(--kart-line-height-body);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--kart-font-family-display);
+  line-height: var(--kart-line-height-heading);
+  margin: 0 0 var(--kart-spacing-md);
+}
+
+a {
+  color: var(--kart-color-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--kart-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Applied via the shared/ui KartInput directive (input[kartInput]/select[kartInput]). */
+.kart-input {
+  width: 100%;
+  padding: var(--kart-spacing-sm);
+  border-radius: var(--kart-radius-sm);
+  border: 1px solid var(--kart-color-border);
+  background-color: var(--kart-color-background);
+  color: var(--kart-color-text);
+  font-family: var(--kart-font-family-base);
+  font-size: var(--kart-font-size-body);
+}
+
+.kart-input:disabled {
+  background-color: var(--kart-color-disabled);
+  color: var(--kart-color-disabled-text);
+}
+
+.kart-input.ng-invalid.ng-touched {
+  border-color: var(--kart-color-danger);
+}
+
+select.kart-input {
+  appearance: none;
+  padding-right: calc(var(--kart-spacing-lg) + var(--kart-spacing-sm));
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right calc(var(--kart-spacing-md) + 0.3em) top 55%,
+    right var(--kart-spacing-md) top 55%;
+  background-size: 0.3em 0.3em;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+select.kart-input:disabled {
+  cursor: not-allowed;
+}
+
+/* Applied via the shared/ui Button component, and directly on <a> tags styled as buttons. */
+.kart-button--full-width {
+  display: flex;
+  width: 100%;
+}
+
+.kart-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kart-spacing-xs);
+  padding: var(--kart-spacing-sm) var(--kart-spacing-md);
+  border-radius: var(--kart-radius-md);
+  border: 1px solid transparent;
+  font-family: var(--kart-font-family-base);
+  font-size: var(--kart-font-size-body);
+  font-weight: var(--kart-font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--kart-motion-duration-fast) var(--kart-motion-easing-standard);
+}
+
+.kart-button:disabled {
+  cursor: not-allowed;
+  background-color: var(--kart-color-disabled);
+  color: var(--kart-color-disabled-text);
+  border-color: var(--kart-color-disabled);
+}
+
+.kart-button--primary:not(:disabled) {
+  background-color: var(--kart-color-primary);
+  color: var(--kart-color-text-on-primary);
+}
+
+.kart-button--primary:not(:disabled):hover {
+  background-color: var(--kart-color-primary-hover);
+}
+
+.kart-button--secondary:not(:disabled) {
+  background-color: transparent;
+  color: var(--kart-color-secondary);
+  border-color: var(--kart-color-border);
+}
+
+.kart-button--secondary:not(:disabled):hover {
+  background-color: var(--kart-color-surface);
+}
+
+.kart-button--danger:not(:disabled) {
+  background-color: var(--kart-color-danger);
+  color: var(--kart-color-text-on-primary);
+}
+
+.kart-button--danger:not(:disabled):hover {
+  background-color: var(--kart-color-danger-hover);
+}
+
+/* Shared layout for auth/login and other single-column standalone pages. */
+.kart-auth-page {
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--kart-spacing-md);
+}
+
+.kart-auth-page form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kart-spacing-sm);
+}
+
+/* Shared page-level layout every feature screen uses (list/detail/form pages alike). */
+.kart-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--kart-spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--kart-spacing-md);
+}
+
+.kart-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kart-spacing-md);
+  flex-wrap: wrap;
+}
+
+.kart-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kart-spacing-xs);
+}
+
+.kart-form-row {
+  display: flex;
+  gap: var(--kart-spacing-md);
+  flex-wrap: wrap;
+}
+
+.kart-form-actions {
+  display: flex;
+  gap: var(--kart-spacing-sm);
+  justify-content: flex-end;
+}

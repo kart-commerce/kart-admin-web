@@ -1,0 +1,10 @@
+.kart-support-order__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--kart-spacing-md);
+  margin-top: var(--kart-spacing-sm);
+}
+
+.kart-support-order__hint {
+  color: var(--kart-color-text-muted);
+}

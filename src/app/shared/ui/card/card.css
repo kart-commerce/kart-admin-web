@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.kart-card {
+  background-color: var(--kart-color-background);
+  border: 1px solid var(--kart-color-border);
+  border-radius: var(--kart-radius-lg);
+  box-shadow: var(--kart-shadow-level-1);
+  transition: box-shadow var(--kart-motion-duration-base) var(--kart-motion-easing-standard);
+}
+
+.kart-card--padded {
+  padding: var(--kart-spacing-lg);
+}

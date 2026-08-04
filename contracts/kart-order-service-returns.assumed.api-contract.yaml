@@ -1,0 +1,244 @@
+# doc_type: api-contract (ASSUMED — not upstream-approved)
+# service: kart-order-service (ReturnRequest sub-resource)
+# status: assumed-by-kart-admin-web — NOT an approved contract
+#
+# This file does not exist upstream. checkout-and-refunds.md §B.4 states a
+# `ReturnRequest` child record on the Order aggregate ("state: Requested →
+# Approved/Rejected → RefundIssued") and that "formalizing this in
+# kart-order-service's own docs is captured as a ticket (tickets.md), not
+# invented wholesale in this client-tier doc" — but as of this app's build,
+# no such ticket actually appears in kart-order-service/tickets.md (verified
+# by direct inspection), and no ReturnRequest route exists in
+# kart-order-service/api-contract.yaml or kart-admin-service/api-contract.yaml.
+#
+# SUP-3 (Refund Requests queue) and SUP-4 (Approve/Reject) cannot be built
+# against a real contract that doesn't exist, and per this app's own scope
+# ("do not stub/mock business logic to compensate — wire real HTTP calls"),
+# the choice here is the same one kart-admin-service's own api-contract.yaml
+# already made for Product/Category/Coupon write shapes: author a best-effort
+# mirror of the documented state machine and flag it as an assumption to
+# reconcile once kart-order-service's own ReturnRequest ticket actually
+# lands, rather than inventing a client-side mock with no HTTP call at all.
+#
+# Reconcile-when: kart-order-service formalizes its own ReturnRequest
+# aggregate/ticket. This file (and the generated client under
+# core/http/generated/order-returns/v1) should then be replaced with the
+# real contract's shape, not kept as a permanent parallel source of truth.
+
+openapi: 3.0.3
+info:
+  title: kart-order-service ReturnRequest API (assumed)
+  version: 0.0.0-assumed
+  description: >
+    Best-effort mirror of checkout-and-refunds.md §B.4's ReturnRequest state
+    machine (Requested → Approved/Rejected → RefundIssued) and its
+    auto-approval-fast-path exclusion criteria (§B.4), authored by
+    kart-admin-web since no upstream contract exists yet.
+
+servers:
+  - url: /v1
+
+paths:
+  /returns:
+    get:
+      operationId: listReturnRequests
+      summary: List ReturnRequests landing in the manual-review queue (SUP-3).
+      description: >
+        Auto-approved requests never appear here (checkout-and-refunds.md
+        §B.4's auto-approval fast path resolves without human review) — this
+        endpoint only ever surfaces requests that failed that fast path.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/ReturnRequestStatus' }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: Matching ReturnRequests.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ReturnRequest' }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  total: { type: integer }
+
+  /returns/{returnRequestId}:
+    get:
+      operationId: getReturnRequest
+      summary: Read a single ReturnRequest's detail (SUP-3).
+      parameters:
+        - name: returnRequestId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: The ReturnRequest.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReturnRequest' }
+        '404':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /returns/{returnRequestId}/approve:
+    post:
+      operationId: approveReturnRequest
+      summary: Approve a ReturnRequest, triggering POST /payments/{id}/refund (SUP-4).
+      description: >
+        Capped at the reviewing Support Agent's own per-order refund grant
+        (requirement-spec.md §5) — Admin has no cap. The approved amount may
+        be adjusted downward from the originally requested amount, never
+        higher (checkout-and-refunds.md §B.4).
+      parameters:
+        - name: returnRequestId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          required: true
+          description: Expected current `version` of the ReturnRequest row (optimistic concurrency).
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { $ref: '#/components/schemas/Money' }
+      responses:
+        '200':
+          description: Approved; refund initiated.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReturnRequest' }
+        '403':
+          description: >
+            Amount exceeds the reviewing Support Agent's own per-order
+            refund cap — Admin-escalation-required (requirement-spec.md
+            §3.3), surfaced post-click per edge-cases.md's resolved decision
+            (no just-in-time cap re-fetch).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '409':
+          description: >
+            Already resolved by another principal (edge-cases.md "Concurrent
+            Support Agents Double-Approving the Same Refund Request") or a
+            stale `If-Match` version — `Problem.details.resolvedBy` names
+            the principal who won, if known.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /returns/{returnRequestId}/reject:
+    post:
+      operationId: rejectReturnRequest
+      summary: Reject a ReturnRequest with a mandatory, customer-visible reason (SUP-4).
+      description: >
+        `reason` is shown verbatim to the customer — never a generic
+        rejection (requirement-spec.md §3.3, same rule as coupon-validation
+        UX).
+      parameters:
+        - name: returnRequestId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Rejected.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReturnRequest' }
+        '409':
+          description: Already resolved, or a stale `If-Match` version.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+components:
+  schemas:
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount: { type: number }
+        currency: { type: string, example: USD }
+
+    ReturnRequestStatus:
+      type: string
+      enum: [Requested, Approved, Rejected, RefundIssued]
+
+    ReturnRequestLineItem:
+      type: object
+      required: [sku, qty]
+      properties:
+        sku: { type: string }
+        qty: { type: integer, minimum: 1 }
+
+    ReturnRequest:
+      type: object
+      required: [returnRequestId, orderId, customerId, requestedAmount, lineItems, status, reason, requestedAt, version]
+      properties:
+        returnRequestId: { type: string, format: uuid }
+        orderId: { type: string }
+        customerId: { type: string }
+        requestedAmount: { $ref: '#/components/schemas/Money' }
+        lineItems:
+          type: array
+          items: { $ref: '#/components/schemas/ReturnRequestLineItem' }
+        status: { $ref: '#/components/schemas/ReturnRequestStatus' }
+        reason: { type: string, description: "Customer-stated return reason." }
+        requestedAt: { type: string, format: date-time }
+        reviewedBy: { type: string, nullable: true }
+        reviewedAt: { type: string, format: date-time, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        version: { type: integer }
+
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details:
+          type: object
+          additionalProperties: true

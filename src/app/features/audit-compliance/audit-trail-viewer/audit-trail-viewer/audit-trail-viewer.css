@@ -1,0 +1,14 @@
+.kart-audit__tabs {
+  display: flex;
+  gap: var(--kart-spacing-md);
+}
+
+.kart-audit__tabs a {
+  color: var(--kart-color-text-muted);
+  text-decoration: none;
+  font-weight: var(--kart-font-weight-medium);
+}
+
+.kart-audit__tab--active {
+  color: var(--kart-color-primary);
+}

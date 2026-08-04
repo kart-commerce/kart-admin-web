@@ -1,0 +1,71 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Review Refund Request</h1>
+    <a class="kart-button kart-button--secondary" routerLink="/support-console/refund-requests">Back to queue</a>
+  </div>
+
+  @if (loading()) {
+    <kart-spinner label="Loading refund request" />
+  }
+  @if (loadError()) {
+    <kart-alert variant="danger">{{ loadError() }}</kart-alert>
+  }
+
+  @if (request(); as r) {
+    <kart-card>
+      <p>Order: {{ r.orderId }} — Customer: {{ r.customerId }}</p>
+      <p>Requested: {{ r.requestedAmount.amount | number: '1.2-2' }} {{ r.requestedAmount.currency }}</p>
+      <p>Reason given by customer: "{{ r.reason }}"</p>
+      <p>Requested at: {{ r.requestedAt | date: 'medium' }}</p>
+
+      <h3>Line items</h3>
+      <ul>
+        @for (item of r.lineItems; track item.sku) {
+          <li>{{ item.sku }} × {{ item.qty }}</li>
+        }
+      </ul>
+    </kart-card>
+
+    @if (actionError()) {
+      <kart-alert variant="danger">
+        {{ actionError() }}
+        @if (escalationRequired()) {
+          <br />This request needs an Admin to approve it at the requested amount.
+        }
+      </kart-alert>
+    }
+
+    <kart-card>
+      <h3>Approve</h3>
+      <form [formGroup]="approveForm" (ngSubmit)="approve()">
+        <kart-form-field
+          label="Approved amount"
+          inputId="refund-approve-amount"
+          hint="May be adjusted down from the requested amount, never higher."
+          [error]="approveForm.controls.amount.invalid && approveForm.controls.amount.touched ? 'Enter an amount greater than 0 and no higher than requested.' : null"
+        >
+          <input id="refund-approve-amount" type="number" step="0.01" kartInput formControlName="amount" />
+        </kart-form-field>
+        <div class="kart-form-actions">
+          <kart-button type="submit" variant="primary" [loading]="submittingAction() === 'approve'">Approve &amp; refund</kart-button>
+        </div>
+      </form>
+    </kart-card>
+
+    <kart-card>
+      <h3>Reject</h3>
+      <form [formGroup]="rejectForm" (ngSubmit)="reject()">
+        <kart-form-field
+          label="Reason (shown to the customer verbatim)"
+          inputId="refund-reject-reason"
+          [error]="rejectForm.controls.reason.invalid && rejectForm.controls.reason.touched ? 'A reason is required.' : null"
+        >
+          <textarea id="refund-reject-reason" kartInput formControlName="reason" rows="3"></textarea>
+        </kart-form-field>
+        <div class="kart-form-actions">
+          <kart-button type="submit" variant="danger" [loading]="submittingAction() === 'reject'">Reject</kart-button>
+        </div>
+      </form>
+    </kart-card>
+  }
+</div>

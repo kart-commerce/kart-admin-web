@@ -1,0 +1,59 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Product Management</h1>
+    <kart-button variant="primary" *kartRequiresGrant="'catalog-management'" (click)="create()">Create product</kart-button>
+  </div>
+
+  <div class="kart-form-row">
+    <input
+      type="search"
+      kartInput
+      placeholder="Search by name, SKU, or brand"
+      [(ngModel)]="query"
+      (keyup.enter)="load()"
+    />
+    <kart-button variant="secondary" (click)="load()">Search</kart-button>
+  </div>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && results().length === 0"
+    emptyTitle="No products found"
+    emptyDescription="Try a different search, or create a new product."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Name</th>
+          <th>Brand</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Rating</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of results(); track item.sku) {
+          <tr>
+            <td>{{ item.sku }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.brand }}</td>
+            <td>{{ item.category.categoryName ?? item.category.categoryId }}</td>
+            <td>{{ item.price.amount | number: '1.2-2' }} {{ item.price.currency }}</td>
+            <td>{{ item.rating.avg | number: '1.1-1' }} ({{ item.rating.count }})</td>
+            <td class="kart-product-list__actions" *kartRequiresGrant="'catalog-management'">
+              <kart-button variant="secondary" (click)="edit(item)">Edit</kart-button>
+              <kart-button variant="danger" [loading]="deactivatingSku() === item.sku" (click)="deactivate(item)">
+                Deactivate
+              </kart-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </kart-data-table-shell>
+</div>
+
+<kart-product-form (saved)="load()" />

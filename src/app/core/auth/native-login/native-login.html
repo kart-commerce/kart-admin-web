@@ -1,0 +1,56 @@
+<div class="kart-native-login">
+  <h2>Support Agent</h2>
+
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+
+  @if (step() === 'credentials') {
+    <p>Sign in with your Kart credentials.</p>
+    <form [formGroup]="credentialsForm" (ngSubmit)="submitCredentials()">
+      <kart-form-field
+        label="Email"
+        inputId="native-login-email"
+        [error]="credentialsForm.controls.email.invalid && credentialsForm.controls.email.touched ? 'Enter a valid email address.' : null"
+      >
+        <input id="native-login-email" type="email" kartInput formControlName="email" autocomplete="username" />
+      </kart-form-field>
+
+      <kart-form-field
+        label="Password"
+        inputId="native-login-password"
+        [error]="credentialsForm.controls.password.invalid && credentialsForm.controls.password.touched ? 'Password is required.' : null"
+      >
+        <input
+          id="native-login-password"
+          type="password"
+          kartInput
+          formControlName="password"
+          autocomplete="current-password"
+        />
+      </kart-form-field>
+
+      <kart-button type="submit" variant="primary" [fullWidth]="true" [loading]="submitting()">Sign in</kart-button>
+    </form>
+  } @else {
+    <p>Enter the 6-digit code from your authenticator app.</p>
+    <form [formGroup]="mfaForm" (ngSubmit)="submitMfa()">
+      <kart-form-field
+        label="Authentication code"
+        inputId="native-login-totp"
+        [error]="mfaForm.controls.totpCode.invalid && mfaForm.controls.totpCode.touched ? 'Enter the 6-digit code.' : null"
+      >
+        <input
+          id="native-login-totp"
+          type="text"
+          inputmode="numeric"
+          kartInput
+          formControlName="totpCode"
+          autocomplete="one-time-code"
+        />
+      </kart-form-field>
+
+      <kart-button type="submit" variant="primary" [fullWidth]="true" [loading]="submitting()">Verify</kart-button>
+    </form>
+  }
+</div>

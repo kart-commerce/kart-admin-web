@@ -1,0 +1,27 @@
+:host {
+  display: inline-flex;
+}
+
+.kart-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kart-spacing-sm);
+}
+
+.kart-logo__mark {
+  display: block;
+  border-radius: var(--kart-radius-sm);
+}
+
+.kart-logo__word {
+  font-family: var(--kart-font-family-display);
+  font-size: var(--kart-font-size-heading-3);
+  font-weight: var(--kart-font-weight-bold);
+  color: var(--kart-color-text);
+  letter-spacing: -0.02em;
+}
+
+.kart-logo__suffix {
+  font-weight: var(--kart-font-weight-medium);
+  color: var(--kart-color-text-muted);
+}

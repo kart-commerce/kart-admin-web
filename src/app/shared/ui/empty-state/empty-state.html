@@ -1,0 +1,16 @@
+<div class="kart-empty-state">
+  <div class="kart-empty-state__icon" aria-hidden="true">
+    @switch (variant()) {
+      @case ('error') { ⚠ }
+      @case ('access-denied') { 🔒 }
+      @default { 🗂 }
+    }
+  </div>
+  <h2 class="kart-empty-state__title">{{ title() }}</h2>
+  @if (description()) {
+    <p class="kart-empty-state__description">{{ description() }}</p>
+  }
+  <div class="kart-empty-state__actions">
+    <ng-content />
+  </div>
+</div>

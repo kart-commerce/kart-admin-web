@@ -1,0 +1,10 @@
+.kart-privacy-requests {
+  margin-top: var(--kart-spacing-lg);
+  padding-top: var(--kart-spacing-lg);
+  border-top: 1px solid var(--kart-color-border);
+}
+
+.kart-privacy-requests__hint {
+  color: var(--kart-color-text-muted);
+  font-size: var(--kart-font-size-caption);
+}

@@ -1,0 +1,14 @@
+<kart-modal
+  [open]="capWarning.warningVisible()"
+  titleText="Your session will end soon"
+  [dismissible]="false"
+>
+  <p>
+    Your session has reached its maximum allowed duration and cannot be extended. Please finish or
+    save any in-progress work now — multi-step forms in this app save a local draft automatically,
+    but any unsaved changes elsewhere will be lost when you're signed out.
+  </p>
+  <div modalActions>
+    <kart-button variant="secondary" (click)="capWarning.acknowledge()">OK, I understand</kart-button>
+  </div>
+</kart-modal>

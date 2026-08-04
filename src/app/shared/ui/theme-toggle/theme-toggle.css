@@ -1,0 +1,23 @@
+.kart-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  line-height: 1;
+  background: none;
+  border: none;
+  border-radius: var(--kart-radius-md);
+  color: var(--kart-color-text);
+  cursor: pointer;
+}
+
+.kart-theme-toggle:hover {
+  background-color: var(--kart-color-surface);
+}
+
+.kart-theme-toggle:focus-visible {
+  outline: 2px solid var(--kart-color-focus-ring);
+  outline-offset: 2px;
+}

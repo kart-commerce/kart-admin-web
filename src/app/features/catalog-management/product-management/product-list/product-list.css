@@ -1,0 +1,4 @@
+.kart-product-list__actions {
+  display: flex;
+  gap: var(--kart-spacing-xs);
+}

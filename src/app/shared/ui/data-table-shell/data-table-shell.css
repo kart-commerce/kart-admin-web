@@ -1,0 +1,9 @@
+.kart-data-table-shell__status {
+  display: flex;
+  justify-content: center;
+  padding: var(--kart-spacing-xl, var(--kart-spacing-lg));
+}
+
+.kart-data-table-shell__table {
+  overflow-x: auto;
+}

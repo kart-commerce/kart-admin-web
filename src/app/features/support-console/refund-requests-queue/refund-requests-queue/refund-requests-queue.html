@@ -1,0 +1,43 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Refund Requests</h1>
+    <kart-button variant="secondary" (click)="load()">Refresh</kart-button>
+  </div>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && requests().length === 0"
+    emptyTitle="Nothing waiting for review"
+    emptyDescription="Every customer return request has either auto-approved or already been reviewed."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Customer</th>
+          <th>Requested amount</th>
+          <th>Reason</th>
+          <th>Requested at</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (request of requests(); track request.returnRequestId) {
+          <tr>
+            <td>{{ request.orderId }}</td>
+            <td>{{ request.customerId }}</td>
+            <td>{{ request.requestedAmount.amount | number: '1.2-2' }} {{ request.requestedAmount.currency }}</td>
+            <td>{{ request.reason }}</td>
+            <td>{{ request.requestedAt | date: 'medium' }}</td>
+            <td>
+              <a class="kart-button kart-button--secondary" [routerLink]="['/support-console/refund-requests', request.returnRequestId]">
+                Review
+              </a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </kart-data-table-shell>
+</div>

@@ -1,0 +1,40 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+}
+
+.kart-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--kart-radius-circle);
+  border: 2px solid var(--kart-color-border);
+  border-top-color: var(--kart-color-primary);
+  animation: kart-spin var(--kart-motion-duration-slow) linear infinite;
+}
+
+.kart-spinner--sm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.kart-spinner__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes kart-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kart-spinner {
+    animation-duration: 1.5s;
+  }
+}

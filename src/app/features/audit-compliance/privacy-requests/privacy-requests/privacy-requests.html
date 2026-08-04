@@ -1,0 +1,37 @@
+<section class="kart-privacy-requests">
+  <h2>Privacy Requests</h2>
+  <p class="kart-privacy-requests__hint">
+    GDPR rights-requests (erasure/export) — visible only to Admins holding the compliance grant
+    (edge-cases.md's data-minimization decision).
+  </p>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && requests().length === 0"
+    emptyTitle="No open privacy requests"
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Requester</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Requested at</th>
+          <th>Completed at</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (request of requests(); track request.requestId) {
+          <tr>
+            <td>{{ request.principalId }}</td>
+            <td>{{ request.type }}</td>
+            <td><kart-badge [variant]="statusBadgeVariant[request.status]">{{ request.status }}</kart-badge></td>
+            <td>{{ request.requestedAt | date: 'medium' }}</td>
+            <td>{{ request.completedAt ? (request.completedAt | date: 'medium') : '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </kart-data-table-shell>
+</section>

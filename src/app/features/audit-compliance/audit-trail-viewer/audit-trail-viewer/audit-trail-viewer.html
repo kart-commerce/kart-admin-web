@@ -1,0 +1,55 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Audit &amp; Compliance</h1>
+    <nav class="kart-audit__tabs" aria-label="Audit and compliance sections">
+      <a routerLink="/audit-compliance/audit-trail" routerLinkActive="kart-audit__tab--active">Audit Trail</a>
+      <a routerLink="/audit-compliance/analytics" routerLinkActive="kart-audit__tab--active">Analytics</a>
+    </nav>
+  </div>
+
+  <form [formGroup]="filterForm" (ngSubmit)="load()" class="kart-form-row">
+    <input type="text" kartInput placeholder="Admin ID (optional)" formControlName="adminId" />
+    <select kartInput formControlName="category">
+      <option value="">All categories</option>
+      @for (category of categories; track category) {
+        <option [value]="category">{{ category }}</option>
+      }
+    </select>
+    <kart-button type="submit" variant="secondary">Filter</kart-button>
+  </form>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && actions().length === 0"
+    emptyTitle="No matching admin actions"
+    emptyDescription="Try widening the date range or clearing the filters."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Admin</th>
+          <th>Category</th>
+          <th>Action</th>
+          <th>Entity</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (action of actions(); track action.actionId) {
+          <tr>
+            <td>{{ action.performedAt | date: 'medium' }}</td>
+            <td>{{ action.adminId }}</td>
+            <td>{{ action.category }}</td>
+            <td>{{ action.action }}</td>
+            <td>{{ action.entityId }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </kart-data-table-shell>
+
+  <div *kartRequiresGrant="'compliance'">
+    <kart-privacy-requests />
+  </div>
+</div>

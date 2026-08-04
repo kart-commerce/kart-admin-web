@@ -1,0 +1,9 @@
+<kart-modal [open]="isOpen()" titleText="You're about to be signed out" [dismissible]="false">
+  <p>
+    You'll be signed out in <strong>{{ idleSession.warningSecondsRemaining() }}</strong> seconds due to
+    inactivity, per this app's elevated-privilege session policy.
+  </p>
+  <div modalActions>
+    <kart-button variant="primary" (click)="stayLoggedIn()">Stay signed in</kart-button>
+  </div>
+</kart-modal>

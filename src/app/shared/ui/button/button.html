@@ -1,0 +1,15 @@
+<button
+  class="kart-button"
+  [class.kart-button--primary]="variant() === 'primary'"
+  [class.kart-button--secondary]="variant() === 'secondary'"
+  [class.kart-button--danger]="variant() === 'danger'"
+  [class.kart-button--full-width]="fullWidth()"
+  [type]="type()"
+  [disabled]="disabled() || loading()"
+  [attr.aria-busy]="loading() || null"
+>
+  @if (loading()) {
+    <kart-spinner size="sm" label="" />
+  }
+  <ng-content />
+</button>
