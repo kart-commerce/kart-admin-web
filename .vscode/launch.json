@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug BFF server",
+      "program": "${workspaceFolder}/dist/kart-admin-web/server/server.mjs",
+      "preLaunchTask": "npm: build:bff",
+      "outFiles": ["${workspaceFolder}/dist/**/*.mjs"],
+      "sourceMaps": true,
+      "env": {
+        "PORT": "4000"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}
