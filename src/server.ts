@@ -48,7 +48,9 @@ app.use(
 );
 
 // SPA fallback — every remaining GET (this app's own client-side routes) serves index.html.
-app.get('/*splat', (_req, res) => {
+// path-to-regexp v8's `*name` wildcard requires >=1 segment, so bare '/*splat' never matches the
+// site root itself; '{*splat}' makes the segment optional so '/' falls through here too.
+app.get('/{*splat}', (_req, res) => {
   res.sendFile(join(browserDistFolder, 'index.html'));
 });
 
