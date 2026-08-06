@@ -10,7 +10,8 @@
     "test": "ng test",
     "test:bff": "vitest run --root src/server",
     "lint": "ng lint",
-    "serve:bff": "node dist/kart-admin-web/server/server.mjs"
+    "serve:bff": "node dist/kart-admin-web/server/server.mjs",
+    "start-bff-server": "npm run build:bff && npm run serve:bff"
   },
   "private": true,
   "packageManager": "npm@10.9.2",
