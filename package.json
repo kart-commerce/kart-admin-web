@@ -10,7 +10,7 @@
     "test": "ng test",
     "test:bff": "vitest run --root src/server",
     "lint": "ng lint",
-    "serve:bff": "node dist/kart-admin-web/server/server.mjs",
+    "serve:bff": "node --env-file-if-exists=.env dist/kart-admin-web/server/server.mjs",
     "start-bff-server": "npm run build:bff && npm run serve:bff"
   },
   "private": true,
@@ -26,6 +26,7 @@
     "design-system": "file:vendor/design-system-0.0.1.tgz",
     "express": "^5.1.0",
     "ioredis": "^5.11.1",
+    "pino": "^10.3.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

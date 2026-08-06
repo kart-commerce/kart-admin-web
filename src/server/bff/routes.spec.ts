@@ -7,6 +7,12 @@ import { fetchAnalytics } from './analytics-client';
 import { identityClient } from './identity-client';
 import { sessionStore } from './session-store';
 
+// identity-client's mock below pulls in its real module (importActual, to keep
+// enterpriseFederationStartUrl etc. genuine) — which imports '../logger' at module
+// scope. Mock it here too, or that real import constructs a real pino file
+// destination (logs/bff-server.log) on every routes.spec.ts run.
+vi.mock('../logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+
 vi.mock('./identity-client', async () => {
   const actual = await vi.importActual<typeof import('./identity-client')>('./identity-client');
   return {

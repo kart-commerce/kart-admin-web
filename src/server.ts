@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { bffRouter } from './server/bff/routes';
 import { securityHeaders } from './server/bff/security-headers';
+import { logger } from './server/logger';
 
 /**
  * This app is CSR-only (architecture.md §2 — no SSR tier), so unlike
@@ -35,7 +36,7 @@ app.use('/api/bff', bffRouter);
  * stack trace.
  */
 app.use('/api/bff', (error: unknown, req: Request, res: Response, _next: NextFunction) => {
-  console.error('BFF request failed', { path: req.path, error });
+  logger.error({ err: error, path: req.path }, 'BFF request failed');
   res.status(502).json({ code: 'upstream_unavailable', message: 'A dependent service is unavailable.' });
 });
 
@@ -56,5 +57,5 @@ app.get('/{*splat}', (_req, res) => {
 
 const port = process.env['PORT'] || 4000;
 app.listen(port, () => {
-  console.log(`kart-admin-web BFF listening on http://localhost:${port}`);
+  logger.info({ port }, `kart-admin-web BFF listening on http://localhost:${port}`);
 });

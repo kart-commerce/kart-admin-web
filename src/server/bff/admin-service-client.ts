@@ -18,7 +18,19 @@
  * than a hard failure, so a real backend enforcing the literal contract
  * degrades to an empty grants array instead of breaking login.
  */
+import { logger } from '../logger';
+
 const ADMIN_SERVICE_BASE_URL = process.env['ADMIN_SERVICE_BASE_URL'] ?? 'http://localhost:5290';
+
+if (!process.env['ADMIN_SERVICE_BASE_URL']) {
+  // Surfaced at boot, not just buried in a per-request log, so a missing/misconfigured
+  // ADMIN_SERVICE_BASE_URL is visible before the first login ever hits this client.
+  logger.warn(
+    { defaultUrl: ADMIN_SERVICE_BASE_URL },
+    'adminServiceClient: ADMIN_SERVICE_BASE_URL is not set — defaulting to localhost. ' +
+      'Set it explicitly for any environment where kart-admin-service is actually deployed.',
+  );
+}
 
 export interface PermissionGrant {
   readonly grantId: string;
@@ -33,19 +45,38 @@ export interface PermissionGrant {
 
 export const adminServiceClient = {
   async listOwnGrantCategories(accessToken: string, principalId: string): Promise<string[]> {
+    const url = `${ADMIN_SERVICE_BASE_URL}/v1/admin/permission-grants?principalId=${encodeURIComponent(principalId)}`;
     try {
-      const response = await fetch(
-        `${ADMIN_SERVICE_BASE_URL}/v1/admin/permission-grants?principalId=${encodeURIComponent(principalId)}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } },
-      );
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
       if (!response.ok) {
+        if (response.status === 403) {
+          // Expected under the literal contract reading (see file header) — a principal
+          // without a permission-management grant self-looking-up their own grants.
+          // Not a failure, just "no grants known" — logged at warn, not error.
+          logger.warn(
+            { url, principalId },
+            'adminServiceClient: permission-grants lookup returned 403 (treated as no grants known)',
+          );
+        } else {
+          logger.error(
+            { url, principalId, status: response.status, statusText: response.statusText },
+            'adminServiceClient: permission-grants lookup failed with a non-OK response',
+          );
+        }
         return [];
       }
       const body = (await response.json()) as { items?: PermissionGrant[] };
       return (body.items ?? []).filter((grant) => !grant.revokedAt).map((grant) => grant.category);
-    } catch {
-      // kart-admin-service isn't implemented yet (see this app's completion
-      // summary) — degrade to "no known grants" rather than fail login.
+    } catch (error) {
+      // kart-admin-service isn't implemented yet (see this app's completion summary) —
+      // degrade to "no known grants" rather than fail login. But this is exactly what a
+      // *real* outage looks like too (ECONNREFUSED, DNS failure, timeout), so it must stay
+      // loud in server logs (kart-conventions.md's "one log per exception" rule) even though
+      // it never reaches the BFF's global error middleware by design.
+      logger.error(
+        { url, principalId, err: error },
+        'adminServiceClient: permission-grants lookup threw — is the service unreachable?',
+      );
       return [];
     }
   },
