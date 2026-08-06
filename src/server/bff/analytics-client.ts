@@ -15,9 +15,13 @@
  * surface for AUD-2).
  */
 import { logger } from '../logger';
+import { SERVICE_ENDPOINTS } from '../../app/core/config/service-endpoints';
 
+// kart-analytics-service is still an unscaffolded stub (no code yet) — it has no entry in
+// SERVICE_ENDPOINTS/kart-devops/ports.env since no canonical port has been assigned yet; this
+// literal fallback is a placeholder, not a copy of a value that exists anywhere else.
 const ANALYTICS_SERVICE_BASE_URL = process.env['ANALYTICS_SERVICE_BASE_URL'] ?? 'http://localhost:5295';
-const IDENTITY_SERVICE_BASE_URL = process.env['IDENTITY_SERVICE_BASE_URL'] ?? 'http://localhost:5200';
+const IDENTITY_SERVICE_BASE_URL = process.env['IDENTITY_SERVICE_BASE_URL'] ?? SERVICE_ENDPOINTS.identity;
 const ANALYTICS_CLIENT_ID = process.env['ANALYTICS_CLIENT_ID'] ?? '';
 const ANALYTICS_CLIENT_SECRET = process.env['ANALYTICS_CLIENT_SECRET'] ?? '';
 

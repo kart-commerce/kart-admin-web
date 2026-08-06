@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import Redis from 'ioredis';
 
 import { Role } from './identity-client';
+import { REDIS_LOCAL_URL } from '../../app/core/config/service-endpoints';
 
 /**
  * Server-held session record — this, not the browser cookie, is where the
@@ -37,7 +38,7 @@ export const ABSOLUTE_CAP_HOURS: Record<Role, number> = {
 export class SessionStore {
   private readonly redis: Redis;
 
-  constructor(redisUrl = process.env['REDIS_URL'] ?? 'redis://localhost:6379') {
+  constructor(redisUrl = process.env['REDIS_URL'] ?? REDIS_LOCAL_URL) {
     this.redis = new Redis(redisUrl, { lazyConnect: true });
   }
 

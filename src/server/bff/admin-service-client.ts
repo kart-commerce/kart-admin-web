@@ -19,8 +19,9 @@
  * degrades to an empty grants array instead of breaking login.
  */
 import { logger } from '../logger';
+import { SERVICE_ENDPOINTS } from '../../app/core/config/service-endpoints';
 
-const ADMIN_SERVICE_BASE_URL = process.env['ADMIN_SERVICE_BASE_URL'] ?? 'http://localhost:5290';
+const ADMIN_SERVICE_BASE_URL = process.env['ADMIN_SERVICE_BASE_URL'] ?? SERVICE_ENDPOINTS.admin;
 
 if (!process.env['ADMIN_SERVICE_BASE_URL']) {
   // Surfaced at boot, not just buried in a per-request log, so a missing/misconfigured

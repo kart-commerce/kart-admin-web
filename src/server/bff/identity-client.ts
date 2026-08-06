@@ -9,8 +9,9 @@
  * kart-api-gateway or a deployed environment instead.
  */
 import { logger } from '../logger';
+import { SERVICE_ENDPOINTS } from '../../app/core/config/service-endpoints';
 
-const IDENTITY_SERVICE_BASE_URL = process.env['IDENTITY_SERVICE_BASE_URL'] ?? 'http://localhost:5200';
+const IDENTITY_SERVICE_BASE_URL = process.env['IDENTITY_SERVICE_BASE_URL'] ?? SERVICE_ENDPOINTS.identity;
 
 /**
  * The enterprise IdP alias configured for this deployment
