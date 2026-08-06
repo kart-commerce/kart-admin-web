@@ -18,7 +18,7 @@ describe('ProductReadApiService', () => {
 
   it('getProduct() GETs /products/{sku}', () => {
     service.getProduct('SKU-1').subscribe();
-    const req = httpMock.expectOne('/v1/products/SKU-1');
+    const req = httpMock.expectOne('/api/bff/gateway/v1/products/SKU-1');
     expect(req.request.method).toBe('GET');
     req.flush({});
   });

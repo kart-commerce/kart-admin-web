@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { join } from 'node:path';
 
+import { gatewayProxyRouter } from './server/bff/gateway-proxy';
 import { bffRouter } from './server/bff/routes';
 import { securityHeaders } from './server/bff/security-headers';
 import { logger } from './server/logger';
@@ -27,6 +28,7 @@ app.use(securityHeaders);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false })); // SAML ACS posts SAMLResponse as application/x-www-form-urlencoded
 app.use('/api/bff', bffRouter);
+app.use('/api/bff/gateway', gatewayProxyRouter);
 
 /**
  * Single error-handling boundary for the BFF routes (kart-conventions.md's

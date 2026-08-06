@@ -18,14 +18,14 @@ describe('CategoryReadApiService', () => {
 
   it('listCategories() GETs /categories with an optional parentId', () => {
     service.listCategories({ parentId: 'electronics' }).subscribe();
-    const req = httpMock.expectOne((r) => r.url === '/v1/categories');
+    const req = httpMock.expectOne((r) => r.url === '/api/bff/gateway/v1/categories');
     expect(req.request.params.get('parentId')).toBe('electronics');
     req.flush([]);
   });
 
   it('listCategories() omits parentId entirely when listing top-level categories', () => {
     service.listCategories().subscribe();
-    const req = httpMock.expectOne((r) => r.url === '/v1/categories');
+    const req = httpMock.expectOne((r) => r.url === '/api/bff/gateway/v1/categories');
     expect(req.request.params.has('parentId')).toBeFalse();
     req.flush([]);
   });
