@@ -16,6 +16,8 @@ export interface StoredSession {
   readonly role: Role;
   readonly principalId: string;
   readonly grants: readonly string[];
+  /** True when `grants` may be incomplete because kart-admin-service couldn't actually be reached/checked at login (see admin-service-client.ts's `OwnGrantCategoriesResult`) — as opposed to a genuine zero-grants principal. */
+  readonly grantsDegraded: boolean;
   /** ISO timestamp — when this session's tokens were first issued. */
   readonly loginAt: string;
   /** ISO timestamp — the server-computed absolute session cap (security.md §2.2); never recomputed client-side. */

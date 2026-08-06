@@ -31,6 +31,7 @@ describe('SessionStore', () => {
       role: 'admin',
       principalId: 'p1',
       grants: [],
+      grantsDegraded: false,
     });
     const agentSession = await sessionStore.create({
       accessToken: 'a',
@@ -38,6 +39,7 @@ describe('SessionStore', () => {
       role: 'support_agent',
       principalId: 'p2',
       grants: [],
+      grantsDegraded: false,
     });
 
     const adminCapHours = (new Date(adminSession.stored.absoluteCapAt).getTime() - new Date(adminSession.stored.loginAt).getTime()) / 3_600_000;
@@ -57,6 +59,7 @@ describe('SessionStore', () => {
       role: 'admin',
       principalId: 'p1',
       grants: ['catalog-management'],
+      grantsDegraded: false,
     });
 
     expect(await sessionStore.get(sessionId)).toEqual(stored);
@@ -76,6 +79,7 @@ describe('SessionStore', () => {
       role: 'admin',
       principalId: 'p1',
       grants: [],
+      grantsDegraded: false,
     });
 
     await sessionStore.destroy(sessionId);
@@ -91,6 +95,7 @@ describe('SessionStore', () => {
       role: 'admin',
       principalId: 'p1',
       grants: [],
+      grantsDegraded: false,
     });
 
     await sessionStore.save(sessionId, { ...stored, accessToken: 'new-access', refreshToken: 'new-refresh' });

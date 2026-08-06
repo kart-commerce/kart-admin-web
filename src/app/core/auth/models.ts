@@ -36,6 +36,13 @@ export interface SessionInfo {
    * Agent's Refund-Approval Cap Changes Between Viewing and Approving").
    */
   readonly grants: readonly GrantCategory[];
+  /**
+   * True when `grants` may be incomplete because kart-admin-service couldn't actually be
+   * reached/checked at login time — as opposed to a genuine zero-grants principal. Drives
+   * `GrantsDegradedToast` (core/auth/grants-degraded-toast/); never used for access
+   * decisions, same render-time-snapshot caveat as `grants` itself.
+   */
+  readonly grantsDegraded: boolean;
   /** ISO timestamp this session's tokens were first issued — feeds AUTH-4's absolute-cap countdown. */
   readonly loginAt: string | null;
   /** ISO timestamp of the server-computed absolute session cap (security.md §2.2) — never computed client-side. */
@@ -47,6 +54,7 @@ export const UNAUTHENTICATED_SESSION: SessionInfo = {
   role: null,
   principalId: null,
   grants: [],
+  grantsDegraded: false,
   loginAt: null,
   absoluteCapAt: null,
 };

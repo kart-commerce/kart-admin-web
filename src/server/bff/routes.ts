@@ -33,13 +33,22 @@ function resolveElevatedRole(roles: readonly Role[] | undefined): Role | null {
 
 function toSessionInfo(stored: StoredSession | null) {
   if (!stored) {
-    return { authenticated: false, role: null, principalId: null, grants: [], loginAt: null, absoluteCapAt: null };
+    return {
+      authenticated: false,
+      role: null,
+      principalId: null,
+      grants: [],
+      grantsDegraded: false,
+      loginAt: null,
+      absoluteCapAt: null,
+    };
   }
   return {
     authenticated: true,
     role: stored.role,
     principalId: stored.principalId,
     grants: stored.grants,
+    grantsDegraded: stored.grantsDegraded,
     loginAt: stored.loginAt,
     absoluteCapAt: stored.absoluteCapAt,
   };
@@ -62,13 +71,17 @@ async function establishSession(res: Response, tokenPair: TokenPair): Promise<St
     return null;
   }
 
-  const grants = await adminServiceClient.listOwnGrantCategories(tokenPair.accessToken, claims.sub);
+  const { categories: grants, degraded: grantsDegraded } = await adminServiceClient.listOwnGrantCategories(
+    tokenPair.accessToken,
+    claims.sub,
+  );
   const { sessionId, stored } = await sessionStore.create({
     accessToken: tokenPair.accessToken,
     refreshToken: tokenPair.refreshToken,
     role,
     principalId: claims.sub,
     grants,
+    grantsDegraded,
   });
   res.setHeader('Set-Cookie', serializeSessionCookie(sessionId, ABSOLUTE_CAP_HOURS[role] * 60 * 60));
   return stored;

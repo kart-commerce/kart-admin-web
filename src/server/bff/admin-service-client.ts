@@ -43,8 +43,19 @@ export interface PermissionGrant {
   readonly version: number;
 }
 
+/**
+ * `degraded: true` means "grants could not actually be checked" (unreachable service, an
+ * unexpected non-OK response) as opposed to "checked, and there are none" (the documented
+ * 403 self-lookup case) — callers use this to tell an admin their grants view may be
+ * incomplete, rather than silently rendering an empty-grants session as if it were normal.
+ */
+export interface OwnGrantCategoriesResult {
+  readonly categories: string[];
+  readonly degraded: boolean;
+}
+
 export const adminServiceClient = {
-  async listOwnGrantCategories(accessToken: string, principalId: string): Promise<string[]> {
+  async listOwnGrantCategories(accessToken: string, principalId: string): Promise<OwnGrantCategoriesResult> {
     const url = `${ADMIN_SERVICE_BASE_URL}/v1/admin/permission-grants?principalId=${encodeURIComponent(principalId)}`;
     try {
       const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -57,27 +68,23 @@ export const adminServiceClient = {
             { url, principalId },
             'adminServiceClient: permission-grants lookup returned 403 (treated as no grants known)',
           );
-        } else {
-          logger.error(
-            { url, principalId, status: response.status, statusText: response.statusText },
-            'adminServiceClient: permission-grants lookup failed with a non-OK response',
-          );
+          return { categories: [], degraded: false };
         }
-        return [];
+        logger.error(
+          { url, principalId, status: response.status, statusText: response.statusText },
+          'adminServiceClient: permission-grants lookup failed with a non-OK response',
+        );
+        return { categories: [], degraded: true };
       }
       const body = (await response.json()) as { items?: PermissionGrant[] };
-      return (body.items ?? []).filter((grant) => !grant.revokedAt).map((grant) => grant.category);
+      const categories = (body.items ?? []).filter((grant) => !grant.revokedAt).map((grant) => grant.category);
+      return { categories, degraded: false };
     } catch (error) {
-      // kart-admin-service isn't implemented yet (see this app's completion summary) —
-      // degrade to "no known grants" rather than fail login. But this is exactly what a
-      // *real* outage looks like too (ECONNREFUSED, DNS failure, timeout), so it must stay
-      // loud in server logs (kart-conventions.md's "one log per exception" rule) even though
-      // it never reaches the BFF's global error middleware by design.
       logger.error(
         { url, principalId, err: error },
         'adminServiceClient: permission-grants lookup threw — is the service unreachable?',
       );
-      return [];
+      return { categories: [], degraded: true };
     }
   },
 };

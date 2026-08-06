@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AbsoluteCapWarningModal } from './core/auth/absolute-cap-warning-modal/absolute-cap-warning-modal';
 import { AuthService } from './core/auth/auth.service';
 import { GrantService } from './core/auth/grant.service';
+import { GrantsDegradedToast } from './core/auth/grants-degraded-toast/grants-degraded-toast';
 import { IdleSessionService } from './core/auth/idle-session.service';
 import { IdleWarningModal } from './core/auth/idle-warning-modal/idle-warning-modal';
 import { ConsentService } from './core/consent/consent.service';
@@ -21,6 +22,7 @@ import { Logo, ThemeToggle } from './shared/ui';
     ThemeToggle,
     IdleWarningModal,
     AbsoluteCapWarningModal,
+    GrantsDegradedToast,
     CookieConsentBanner,
     CookiePreferenceCenter,
   ],

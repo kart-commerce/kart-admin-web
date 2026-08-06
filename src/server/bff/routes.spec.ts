@@ -30,7 +30,7 @@ vi.mock('./identity-client', async () => {
 });
 
 vi.mock('./admin-service-client', () => ({
-  adminServiceClient: { listOwnGrantCategories: vi.fn().mockResolvedValue([]) },
+  adminServiceClient: { listOwnGrantCategories: vi.fn().mockResolvedValue({ categories: [], degraded: false }) },
 }));
 
 vi.mock('./analytics-client', () => ({
@@ -102,7 +102,15 @@ describe('bffRouter', () => {
   it('GET /session returns unauthenticated with no cookie', async () => {
     const res = await fetch(`${baseUrl}/session`);
     const body = await res.json();
-    expect(body).toEqual({ authenticated: false, role: null, principalId: null, grants: [], loginAt: null, absoluteCapAt: null });
+    expect(body).toEqual({
+      authenticated: false,
+      role: null,
+      principalId: null,
+      grants: [],
+      grantsDegraded: false,
+      loginAt: null,
+      absoluteCapAt: null,
+    });
   });
 
   it('POST /auth/native/login establishes a session on a 200 TokenPair', async () => {
@@ -169,6 +177,23 @@ describe('bffRouter', () => {
 
     expect(res.status).toBe(401);
     expect((await res.json()).code).toBe('invalid_credentials');
+  });
+
+  it('POST /auth/native/login surfaces grantsDegraded when kart-admin-service was unreachable', async () => {
+    (identityClient.login as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 200, body: ADMIN_TOKEN_PAIR });
+    (adminServiceClient.listOwnGrantCategories as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      categories: [],
+      degraded: true,
+    });
+
+    const res = await fetch(`${baseUrl}/auth/native/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'a@b.com', password: 'secret' }),
+    });
+    const body = await res.json();
+
+    expect(body.session.grantsDegraded).toBe(true);
   });
 
   it('logs in, then GET /session reflects the established session via the cookie', async () => {

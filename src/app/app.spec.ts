@@ -18,6 +18,7 @@ describe('App', () => {
           provide: AuthService,
           useValue: {
             session: () => UNAUTHENTICATED_SESSION,
+            grantsDegradedNotice: () => false,
             loadSession: () => of(UNAUTHENTICATED_SESSION),
             logout: () => of(undefined),
           },
