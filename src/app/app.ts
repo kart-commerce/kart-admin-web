@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/cor
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AbsoluteCapWarningModal } from './core/auth/absolute-cap-warning-modal/absolute-cap-warning-modal';
+import { AccessTokenRefreshSchedulerService } from './core/auth/access-token-refresh-scheduler.service';
 import { AuthService } from './core/auth/auth.service';
 import { GrantService } from './core/auth/grant.service';
 import { GrantsDegradedToast } from './core/auth/grants-degraded-toast/grants-degraded-toast';
@@ -35,6 +36,8 @@ export class App {
   protected readonly grantService = inject(GrantService);
   protected readonly consentService = inject(ConsentService);
   private readonly idleSession = inject(IdleSessionService);
+  /** Constructing this singleton starts its constructor `effect()` (same pattern as `AbsoluteCapWarningService`) — see its own doc comment for why proactive refresh belongs alongside idle/absolute-cap session management. */
+  private readonly accessTokenRefreshScheduler = inject(AccessTokenRefreshSchedulerService);
 
   constructor() {
     this.authService.loadSession().subscribe();

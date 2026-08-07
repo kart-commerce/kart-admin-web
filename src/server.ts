@@ -24,6 +24,28 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 
+/**
+ * Express's own `trust proxy` setting — governs `req.ip` (used by `rate-limit-middleware.ts` to
+ * key login/refresh throttling per caller). Defaults to `false` (trust nothing, use the literal
+ * socket address) rather than guessing a hop count, since trusting a spoofable
+ * `X-Forwarded-For` header with no reverse proxy actually in front of this process would let any
+ * caller forge their own rate-limit identity for free. Set `TRUST_PROXY` to the number of
+ * reverse-proxy hops in front of this process in any real deployment (typically `1` for a single
+ * ingress/load balancer) — Express accepts a hop count, `true`/`false`, or a CSV of trusted
+ * IPs/subnets, all supported here by passing the env value straight through.
+ */
+function resolveTrustProxySetting(value: string | undefined): boolean | number | string {
+  if (!value) {
+    return false;
+  }
+  if (value === 'true' || value === 'false') {
+    return value === 'true';
+  }
+  const hops = Number(value);
+  return Number.isFinite(hops) ? hops : value;
+}
+app.set('trust proxy', resolveTrustProxySetting(process.env['TRUST_PROXY']));
+
 app.use(securityHeaders);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false })); // SAML ACS posts SAMLResponse as application/x-www-form-urlencoded

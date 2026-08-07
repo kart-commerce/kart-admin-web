@@ -47,6 +47,8 @@ export interface SessionInfo {
   readonly loginAt: string | null;
   /** ISO timestamp of the server-computed absolute session cap (security.md §2.2) — never computed client-side. */
   readonly absoluteCapAt: string | null;
+  /** ISO timestamp the current access token expires — feeds `AccessTokenRefreshSchedulerService`'s proactive (pre-401) refresh. Never the token itself, only its expiry. */
+  readonly accessTokenExpiresAt: string | null;
 }
 
 export const UNAUTHENTICATED_SESSION: SessionInfo = {
@@ -57,6 +59,7 @@ export const UNAUTHENTICATED_SESSION: SessionInfo = {
   grantsDegraded: false,
   loginAt: null,
   absoluteCapAt: null,
+  accessTokenExpiresAt: null,
 };
 
 export interface NativeLoginRequest {
