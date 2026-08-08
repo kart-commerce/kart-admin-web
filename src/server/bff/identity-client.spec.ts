@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('../logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+
+import { logger } from '../logger';
 import { identityClient } from './identity-client';
 
 function mockFetchOnce(status: number, body: unknown): void {
@@ -15,6 +18,18 @@ function mockFetchOnce(status: number, body: unknown): void {
 describe('identityClient', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  it('login() logs and rethrows when kart-identity-service is unreachable', async () => {
+    const cause = new Error('ECONNREFUSED');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(cause));
+
+    await expect(identityClient.login({ email: 'a@b.com', password: 'secret' })).rejects.toBe(cause);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: cause, method: 'POST' }),
+      expect.stringContaining('unreachable'),
+    );
   });
 
   it('login() posts credentials and returns the parsed TokenPair', async () => {

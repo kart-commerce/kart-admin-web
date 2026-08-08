@@ -13,7 +13,11 @@ COPY package.json package-lock.json ./
 # needs the actual file present at install time, not just the manifests
 # referencing it.
 COPY vendor/ ./vendor/
-RUN npm ci
+# Cache mount persists npm's downloaded-tarball cache across builds (and across kart-web's build,
+# which mounts the same id) independently of the layer cache above, so even a package-lock.json
+# change that busts that layer skips re-downloading packages already fetched by a previous build.
+RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
+    npm ci
 
 COPY . .
 RUN npm run build
@@ -29,4 +33,6 @@ COPY --from=build /app/node_modules ./node_modules
 COPY package.json ./
 
 EXPOSE 4000
-CMD ["node", "dist/kart-admin-web/server/server.mjs"]
+# --env-file-if-exists is a no-op when no .env is mounted (the normal case — real
+# deployments inject env vars directly), but picks one up for local docker-compose use.
+CMD ["node", "--env-file-if-exists=.env", "dist/kart-admin-web/server/server.mjs"]

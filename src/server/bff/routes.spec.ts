@@ -5,7 +5,24 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { adminServiceClient } from './admin-service-client';
 import { fetchAnalytics } from './analytics-client';
 import { identityClient } from './identity-client';
+import { rateLimiter } from './rate-limiter';
 import { sessionStore } from './session-store';
+
+// identity-client's mock below pulls in its real module (importActual, to keep
+// enterpriseFederationStartUrl etc. genuine) — which imports '../logger' at module
+// scope. Mock it here too, or that real import constructs a real pino file
+// destination (logs/bff-server.log) on every routes.spec.ts run.
+vi.mock('../logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+
+// This suite's own concern is routing/session logic, not rate limiting (that's
+// rate-limiter.spec.ts / rate-limit-middleware.spec.ts) — and without this mock, every one of
+// this file's several dozen login/refresh calls would share one real (or, in this test
+// environment, unreachable) Redis-backed counter, tripping 429s well before the file finishes.
+// Defaults to always-allow; individual tests override with `mockResolvedValueOnce` to exercise
+// the 429 path itself.
+vi.mock('./rate-limiter', () => ({
+  rateLimiter: { consume: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }) },
+}));
 
 vi.mock('./identity-client', async () => {
   const actual = await vi.importActual<typeof import('./identity-client')>('./identity-client');
@@ -24,7 +41,7 @@ vi.mock('./identity-client', async () => {
 });
 
 vi.mock('./admin-service-client', () => ({
-  adminServiceClient: { listOwnGrantCategories: vi.fn().mockResolvedValue([]) },
+  adminServiceClient: { listOwnGrantCategories: vi.fn().mockResolvedValue({ categories: [], degraded: false }) },
 }));
 
 vi.mock('./analytics-client', () => ({
@@ -34,6 +51,7 @@ vi.mock('./analytics-client', () => ({
 vi.mock('./session-store', async () => {
   const actual = await vi.importActual<typeof import('./session-store')>('./session-store');
   const memory = new Map<string, unknown>();
+  const locks = new Map<string, string>();
   return {
     ...actual,
     sessionStore: {
@@ -49,6 +67,21 @@ vi.mock('./session-store', async () => {
       }),
       destroy: vi.fn(async (sessionId: string) => {
         memory.delete(sessionId);
+      }),
+      // Real semantics (NX-acquire / compare-and-delete release), backed by an in-memory map
+      // instead of Redis — sufficient to exercise routes.ts's lock-usage logic in these tests;
+      // session-store.spec.ts covers the primitive itself against a fake Redis client.
+      acquireRefreshLock: vi.fn(async (sessionId: string, fencingToken: string) => {
+        if (locks.has(sessionId)) {
+          return false;
+        }
+        locks.set(sessionId, fencingToken);
+        return true;
+      }),
+      releaseRefreshLock: vi.fn(async (sessionId: string, fencingToken: string) => {
+        if (locks.get(sessionId) === fencingToken) {
+          locks.delete(sessionId);
+        }
       }),
     },
     __memory: memory,
@@ -96,7 +129,16 @@ describe('bffRouter', () => {
   it('GET /session returns unauthenticated with no cookie', async () => {
     const res = await fetch(`${baseUrl}/session`);
     const body = await res.json();
-    expect(body).toEqual({ authenticated: false, role: null, principalId: null, grants: [], loginAt: null, absoluteCapAt: null });
+    expect(body).toEqual({
+      authenticated: false,
+      role: null,
+      principalId: null,
+      grants: [],
+      grantsDegraded: false,
+      loginAt: null,
+      absoluteCapAt: null,
+      accessTokenExpiresAt: null,
+    });
   });
 
   it('POST /auth/native/login establishes a session on a 200 TokenPair', async () => {
@@ -113,6 +155,21 @@ describe('bffRouter', () => {
     expect(body.status).toBe('authenticated');
     expect(body.session.role).toBe('admin');
     expect(res.headers.get('set-cookie')).toContain('kart_admin_session=');
+  });
+
+  it('POST /auth/native/login returns 429 with Retry-After when rate-limited', async () => {
+    (rateLimiter.consume as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ allowed: false, retryAfterSeconds: 37 });
+
+    const res = await fetch(`${baseUrl}/auth/native/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'a@b.com', password: 'secret' }),
+    });
+
+    expect(res.status).toBe(429);
+    expect(res.headers.get('retry-after')).toBe('37');
+    expect((await res.json()).code).toBe('rate_limited');
+    expect(identityClient.login).not.toHaveBeenCalled();
   });
 
   it('POST /auth/native/login surfaces a 202 MFA challenge without a cookie', async () => {
@@ -163,6 +220,23 @@ describe('bffRouter', () => {
 
     expect(res.status).toBe(401);
     expect((await res.json()).code).toBe('invalid_credentials');
+  });
+
+  it('POST /auth/native/login surfaces grantsDegraded when kart-admin-service was unreachable', async () => {
+    (identityClient.login as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 200, body: ADMIN_TOKEN_PAIR });
+    (adminServiceClient.listOwnGrantCategories as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      categories: [],
+      degraded: true,
+    });
+
+    const res = await fetch(`${baseUrl}/auth/native/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'a@b.com', password: 'secret' }),
+    });
+    const body = await res.json();
+
+    expect(body.session.grantsDegraded).toBe(true);
   });
 
   it('logs in, then GET /session reflects the established session via the cookie', async () => {
@@ -253,6 +327,110 @@ describe('bffRouter', () => {
     const refreshRes = await fetch(`${baseUrl}/auth/refresh`, { method: 'POST', headers: { Cookie: cookie ?? '' } });
     expect(refreshRes.status).toBe(401);
     expect(refreshRes.headers.get('set-cookie')).toContain('Max-Age=0');
+  });
+
+  it('POST /auth/refresh coalesces concurrent calls for the same session into a single upstream refresh', async () => {
+    (identityClient.login as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 200, body: ADMIN_TOKEN_PAIR });
+    const loginRes = await fetch(`${baseUrl}/auth/native/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'a@b.com', password: 'secret' }),
+    });
+    const cookie = loginRes.headers.get('set-cookie')?.split(';')[0];
+
+    // Simulates several requests 401ing around the same moment right after the access token
+    // expires: without coalescing, the second call to reach identityClient.refresh would be
+    // presented with the same (now-consumed) refresh token and get treated as reuse.
+    (identityClient.refresh as ReturnType<typeof vi.fn>).mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ status: 200, body: { accessToken: 'new-access', refreshToken: 'new-refresh', tokenType: 'Bearer', expiresIn: 900 } }), 20),
+        ),
+    );
+
+    const [first, second] = await Promise.all([
+      fetch(`${baseUrl}/auth/refresh`, { method: 'POST', headers: { Cookie: cookie ?? '' } }),
+      fetch(`${baseUrl}/auth/refresh`, { method: 'POST', headers: { Cookie: cookie ?? '' } }),
+    ]);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect((await first.json()).authenticated).toBe(true);
+    expect((await second.json()).authenticated).toBe(true);
+    expect(identityClient.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('POST /auth/refresh adopts the outcome of a refresh already in progress on another BFF instance', async () => {
+    (identityClient.login as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 200, body: ADMIN_TOKEN_PAIR });
+    const loginRes = await fetch(`${baseUrl}/auth/native/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'a@b.com', password: 'secret' }),
+    });
+    const cookie = loginRes.headers.get('set-cookie')?.split(';')[0] ?? '';
+    const sessionId = cookie.split('=')[1];
+
+    // Simulate the cross-instance lock already being held elsewhere for this exact session —
+    // this instance must poll for the outcome rather than also calling identityClient.refresh().
+    (sessionStore.acquireRefreshLock as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+
+    // ...and simulate that other instance completing the rotation partway through our poll loop.
+    const before = await sessionStore.get(sessionId);
+    if (!before) {
+      throw new Error('expected the session just created via login to exist');
+    }
+    setTimeout(() => {
+      void sessionStore.save(sessionId, { ...before, accessToken: 'rotated-by-other-instance', refreshToken: 'rotated-by-other-instance-refresh' });
+    }, 150);
+
+    const res = await fetch(`${baseUrl}/auth/refresh`, { method: 'POST', headers: { Cookie: cookie } });
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).authenticated).toBe(true);
+    expect(identityClient.refresh).not.toHaveBeenCalled();
+  });
+
+  it('POST /auth/refresh preserves the session on a transient (non-401) upstream failure', async () => {
+    (identityClient.login as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 200, body: ADMIN_TOKEN_PAIR });
+    const loginRes = await fetch(`${baseUrl}/auth/native/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'a@b.com', password: 'secret' }),
+    });
+    const cookie = loginRes.headers.get('set-cookie')?.split(';')[0] ?? '';
+    const sessionId = cookie.split('=')[1];
+
+    (identityClient.refresh as ReturnType<typeof vi.fn>).mockResolvedValue({
+      status: 503,
+      body: { code: 'service_unavailable', message: 'identity-service is having a bad day.' },
+    });
+
+    const res = await fetch(`${baseUrl}/auth/refresh`, { method: 'POST', headers: { Cookie: cookie } });
+
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe('refresh_temporarily_unavailable');
+    expect(res.headers.get('set-cookie')).toBeNull(); // never cleared on a transient failure
+    expect(await sessionStore.get(sessionId)).not.toBeNull(); // session survives intact
+  });
+
+  it('POST /auth/refresh preserves the session when identityClient.refresh throws (e.g. identity-service unreachable)', async () => {
+    (identityClient.login as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 200, body: ADMIN_TOKEN_PAIR });
+    const loginRes = await fetch(`${baseUrl}/auth/native/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'a@b.com', password: 'secret' }),
+    });
+    const cookie = loginRes.headers.get('set-cookie')?.split(';')[0] ?? '';
+    const sessionId = cookie.split('=')[1];
+
+    (identityClient.refresh as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const res = await fetch(`${baseUrl}/auth/refresh`, { method: 'POST', headers: { Cookie: cookie } });
+
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe('refresh_temporarily_unavailable');
+    expect(res.headers.get('set-cookie')).toBeNull();
+    expect(await sessionStore.get(sessionId)).not.toBeNull();
   });
 
   it('POST /auth/logout clears the cookie regardless of whether a session existed', async () => {
@@ -390,5 +568,4 @@ describe('bffRouter', () => {
   });
 });
 
-void sessionStore;
 void adminServiceClient;

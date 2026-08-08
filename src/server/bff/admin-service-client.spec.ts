@@ -1,13 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('../logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+
+import { logger } from '../logger';
 import { adminServiceClient } from './admin-service-client';
 
 describe('adminServiceClient.listOwnGrantCategories', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
-  it('returns only the live (non-revoked) grant categories', async () => {
+  it('returns only the live (non-revoked) grant categories, not degraded', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -22,18 +26,43 @@ describe('adminServiceClient.listOwnGrantCategories', () => {
       }),
     );
 
-    const categories = await adminServiceClient.listOwnGrantCategories('token', 'p1');
-    expect(categories).toEqual(['catalog-management']);
+    const result = await adminServiceClient.listOwnGrantCategories('token', 'p1');
+    expect(result).toEqual({ categories: ['catalog-management'], degraded: false });
   });
 
-  it('degrades to an empty array on a non-OK response (e.g. the literal 403 reading of the contract)', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
-    expect(await adminServiceClient.listOwnGrantCategories('token', 'p1')).toEqual([]);
+  it('degrades to an empty, non-degraded result on the documented 403 self-lookup case, logged as a warning', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 403, statusText: 'Forbidden' }));
+
+    expect(await adminServiceClient.listOwnGrantCategories('token', 'p1')).toEqual({
+      categories: [],
+      degraded: false,
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ principalId: 'p1' }),
+      expect.stringContaining('403'),
+    );
+    expect(logger.error).not.toHaveBeenCalled();
   });
 
-  it('degrades to an empty array when the service is unreachable, rather than throwing', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
-    expect(await adminServiceClient.listOwnGrantCategories('token', 'p1')).toEqual([]);
+  it('degrades on an unexpected non-OK response, logged as an error', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503, statusText: 'Service Unavailable' }));
+
+    expect(await adminServiceClient.listOwnGrantCategories('token', 'p1')).toEqual({ categories: [], degraded: true });
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ principalId: 'p1', status: 503 }),
+      expect.stringContaining('non-OK response'),
+    );
+  });
+
+  it('degrades when the service is unreachable, rather than throwing, and logs the cause loudly', async () => {
+    const cause = new Error('ECONNREFUSED');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(cause));
+
+    expect(await adminServiceClient.listOwnGrantCategories('token', 'p1')).toEqual({ categories: [], degraded: true });
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ principalId: 'p1', err: cause }),
+      expect.stringContaining('unreachable'),
+    );
   });
 
   it('scopes the request to the given principalId', async () => {

@@ -8,7 +8,10 @@
  * override via IDENTITY_SERVICE_BASE_URL when routing through
  * kart-api-gateway or a deployed environment instead.
  */
-const IDENTITY_SERVICE_BASE_URL = process.env['IDENTITY_SERVICE_BASE_URL'] ?? 'http://localhost:5200';
+import { logger } from '../logger';
+import { SERVICE_ENDPOINTS } from '../../app/core/config/service-endpoints';
+
+const IDENTITY_SERVICE_BASE_URL = process.env['IDENTITY_SERVICE_BASE_URL'] ?? SERVICE_ENDPOINTS.identity;
 
 /**
  * The enterprise IdP alias configured for this deployment
@@ -49,10 +52,22 @@ export interface IdentityResponse<T> {
 }
 
 async function identityFetch<T>(path: string, init: RequestInit = {}): Promise<IdentityResponse<T>> {
-  const response = await fetch(`${IDENTITY_SERVICE_BASE_URL}/v1${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
-  });
+  const url = `${IDENTITY_SERVICE_BASE_URL}/v1${path}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
+    });
+  } catch (error) {
+    // Logged with full detail (stack trace included) before rethrowing — control flow is
+    // unchanged, this still bubbles to server.ts's global BFF error middleware and becomes a
+    // generic 502, but that boundary's own log line loses the "which call, which URL" context
+    // this one has. kart-conventions.md's "one log per exception" is satisfied by that
+    // boundary; this is deliberately an *additional*, more specific log, not a replacement.
+    logger.error({ err: error, url, method: init.method ?? 'GET' }, 'identityClient: request threw — is kart-identity-service unreachable?');
+    throw error;
+  }
   const body = (await response.json().catch(() => ({}))) as T;
   return { status: response.status, body };
 }

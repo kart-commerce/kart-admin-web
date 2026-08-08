@@ -18,14 +18,14 @@ describe('OrderApiService', () => {
 
   it('getOrder() GETs /orders/{id}', () => {
     service.getOrder('order-1').subscribe();
-    const req = httpMock.expectOne('/v1/orders/order-1');
+    const req = httpMock.expectOne('/api/bff/gateway/v1/orders/order-1');
     expect(req.request.method).toBe('GET');
     req.flush({});
   });
 
   it('resolveFulfillmentException() POSTs the action with an Idempotency-Key', () => {
     service.resolveFulfillmentException('order-1', { action: 'retry' }, 'idem-1').subscribe();
-    const req = httpMock.expectOne('/v1/orders/order-1/resolve-fulfillment-exception');
+    const req = httpMock.expectOne('/api/bff/gateway/v1/orders/order-1/resolve-fulfillment-exception');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ action: 'retry' });
     expect(req.request.headers.get('Idempotency-Key')).toBe('idem-1');

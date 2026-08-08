@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('../logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+
 describe('fetchAnalytics', () => {
   beforeEach(() => {
     // `cachedToken` is module-level state (analytics-client.ts) — reset the
@@ -9,6 +11,37 @@ describe('fetchAnalytics', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  it('logs and rethrows when the service-token request is unreachable', async () => {
+    const { logger } = await import('../logger');
+    const cause = new Error('ECONNREFUSED');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(cause));
+
+    const { fetchAnalytics } = await import('./analytics-client');
+    await expect(fetchAnalytics('/internal/v1/dashboards/revenue', {})).rejects.toBe(cause);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: cause }),
+      expect.stringContaining('unreachable'),
+    );
+  });
+
+  it('logs and rethrows when the analytics endpoint itself is unreachable', async () => {
+    const { logger } = await import('../logger');
+    const cause = new Error('ECONNREFUSED');
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({ json: () => Promise.resolve({ accessToken: 'svc-token', expiresIn: 3600 }) })
+      .mockRejectedValueOnce(cause);
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const { fetchAnalytics } = await import('./analytics-client');
+    await expect(fetchAnalytics('/internal/v1/dashboards/revenue', {})).rejects.toBe(cause);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: cause }),
+      expect.stringContaining('unreachable'),
+    );
   });
 
   it('obtains a client-credentials token before calling the analytics endpoint', async () => {
