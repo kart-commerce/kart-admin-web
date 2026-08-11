@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Request, Response, Router } from 'express';
 
 import { readSessionId } from './cookie';
@@ -32,9 +33,32 @@ const FORWARDED_REQUEST_HEADERS = ['idempotency-key', 'if-match', 'content-type'
 
 const FORWARDED_RESPONSE_HEADERS = ['etag', 'content-type', 'location'] as const;
 
+const TRACEPARENT_HEADER = 'traceparent';
+
+/**
+ * The browser has no OpenTelemetry SDK, so no request arrives here already carrying a real W3C
+ * `traceparent` (https://www.w3.org/TR/trace-context/) — this BFF is the actual origin of every
+ * trace this flow's tracing standard requires. Generates one fresh per request (root span, no
+ * parent) unless a caller already supplied a well-formed one (future-proofing for a browser-side
+ * tracer, or a server-to-server caller that already has a trace in flight) — ASP.NET Core's
+ * auto-instrumentation on the gateway/admin-service/product-service side then extracts this same
+ * header natively, continuing the identical trace with no code of its own needed for that half.
+ */
+function resolveTraceParent(req: Request): string {
+  const incoming = req.headers[TRACEPARENT_HEADER];
+  if (typeof incoming === 'string' && /^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/.test(incoming)) {
+    return incoming;
+  }
+
+  const traceId = randomBytes(16).toString('hex');
+  const spanId = randomBytes(8).toString('hex');
+  return `00-${traceId}-${spanId}-01`;
+}
+
 gatewayProxyRouter.use(async (req: Request, res: Response) => {
   const sessionId = readSessionId(req.headers.cookie);
   const session = sessionId ? await sessionStore.get(sessionId) : null;
+  const traceParent = resolveTraceParent(req);
 
   const headers = new Headers();
   for (const name of FORWARDED_REQUEST_HEADERS) {
@@ -43,6 +67,7 @@ gatewayProxyRouter.use(async (req: Request, res: Response) => {
       headers.set(name, value);
     }
   }
+  headers.set(TRACEPARENT_HEADER, traceParent);
   if (session) {
     headers.set('Authorization', `Bearer ${session.accessToken}`);
   }
@@ -73,7 +98,7 @@ gatewayProxyRouter.use(async (req: Request, res: Response) => {
     const body = await upstreamResponse.text();
     res.send(body);
   } catch (error) {
-    logger.error({ err: error, path: req.originalUrl }, 'Gateway proxy request failed');
+    logger.error({ err: error, path: req.originalUrl, traceParent }, 'Gateway proxy request failed');
     res.status(502).json({ code: 'upstream_unavailable', message: 'A dependent service is unavailable.' });
   }
 });
