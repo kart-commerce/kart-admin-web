@@ -37,12 +37,24 @@ export class ProductManagementService {
   // the write it just accepted (edge-cases.md's "Read-model staleness" family), not something
   // this call can wait out on the server side. Retrying a plain 404 a few times with backoff
   // covers the realistic "clicked Edit right after Save" case without masking a real not-found.
+  //
+  // Budget must comfortably exceed kart-product-service's own OutboxRelayHostedService poll
+  // interval (5s, product-service's own OutboxRelayHostedService.cs) — that's the dominant term
+  // in create-to-read-model-ready latency (outbox row sits unpublished until the next poll tick,
+  // then publish -> self-consume -> Mongo upsert is near-instant). A budget under that is not
+  // "usually enough", it's a coin flip: an admin who clicks Edit inside the first ~5s after Save
+  // has roughly even odds of landing in the unpublished window depending on exactly when their
+  // create wrote its outbox row relative to the last poll tick. Found live via this exact race in
+  // a real browser run (2026-08-11): 3 retries capped at 3s total wall-clock, actual relay lag was
+  // 3.7s, admin saw a hard "Couldn't load this product's detail." with no automatic recovery.
+  // 5 retries at 1000ms*retryCount gives attempts at t=0/1000/3000/6000/10000/15000ms - the 4th
+  // attempt alone (t=6000ms) already clears the 5s poll interval with margin in the common case.
   getProduct(sku: string): Observable<ProductResponse> {
     return this.productReadApi.getProduct(sku).pipe(
       retry({
-        count: 3,
+        count: 5,
         delay: (error: unknown, retryCount) =>
-          error instanceof HttpErrorResponse && error.status === 404 ? timer(500 * retryCount) : throwError(() => error),
+          error instanceof HttpErrorResponse && error.status === 404 ? timer(1000 * retryCount) : throwError(() => error),
       }),
     );
   }
