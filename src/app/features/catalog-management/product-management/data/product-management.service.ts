@@ -1,5 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, retry, throwError, timer } from 'rxjs';
 
 import { AdminApiService } from '../../../../core/http/generated/admin/v1';
 import { ProductReadApiService, ProductResponse } from '../../../../core/http/generated/product/v1';
@@ -31,8 +32,19 @@ export class ProductManagementService {
     return this.searchApi.search(query);
   }
 
+  // A SKU created (or, before this session, deactivated) moments ago can 404 here for a couple
+  // of seconds - kart-product-service's own read model is a separate, async-projected copy of
+  // the write it just accepted (edge-cases.md's "Read-model staleness" family), not something
+  // this call can wait out on the server side. Retrying a plain 404 a few times with backoff
+  // covers the realistic "clicked Edit right after Save" case without masking a real not-found.
   getProduct(sku: string): Observable<ProductResponse> {
-    return this.productReadApi.getProduct(sku);
+    return this.productReadApi.getProduct(sku).pipe(
+      retry({
+        count: 3,
+        delay: (error: unknown, retryCount) =>
+          error instanceof HttpErrorResponse && error.status === 404 ? timer(500 * retryCount) : throwError(() => error),
+      }),
+    );
   }
 
   createProduct(value: ProductFormValue): Observable<void> {

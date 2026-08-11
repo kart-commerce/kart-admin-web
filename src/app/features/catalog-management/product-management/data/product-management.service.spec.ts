@@ -1,5 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 
 import { AdminApiService } from '../../../../core/http/generated/admin/v1';
 import { ProductReadApiService } from '../../../../core/http/generated/product/v1';
@@ -36,6 +37,38 @@ describe('ProductManagementService', () => {
     productReadApi.getProduct.and.returnValue(of({} as any));
     service.getProduct('SKU-1').subscribe();
     expect(productReadApi.getProduct).toHaveBeenCalledWith('SKU-1');
+  });
+
+  it('getProduct() retries a 404 (read-model projection lag right after create/update) and succeeds', async () => {
+    // retry() resubscribes to the *same* observable getProduct() returned - like the real
+    // HttpClient-backed call, each subscription must independently decide to fail or succeed.
+    const notFound = new HttpErrorResponse({ status: 404 });
+    let subscriptionCount = 0;
+    productReadApi.getProduct.and.returnValue(
+      new Observable((subscriber) => {
+        subscriptionCount++;
+        if (subscriptionCount === 1) {
+          subscriber.error(notFound);
+        } else {
+          subscriber.next({ sku: 'SKU-1' } as any);
+          subscriber.complete();
+        }
+      }),
+    );
+
+    const result = await firstValueFrom(service.getProduct('SKU-1'));
+
+    expect(result).toEqual({ sku: 'SKU-1' } as any);
+    expect(subscriptionCount).toBe(2);
+    expect(productReadApi.getProduct).toHaveBeenCalledTimes(1);
+  });
+
+  it('getProduct() does not retry a non-404 failure', async () => {
+    const serverError = new HttpErrorResponse({ status: 500 });
+    productReadApi.getProduct.and.returnValue(throwError(() => serverError));
+
+    await expectAsync(firstValueFrom(service.getProduct('SKU-1'))).toBeRejectedWith(serverError);
+    expect(productReadApi.getProduct).toHaveBeenCalledTimes(1);
   });
 
   it('createProduct() calls the admin proxy', () => {

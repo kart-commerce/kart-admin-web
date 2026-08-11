@@ -65,12 +65,24 @@ describe('ProductForm', () => {
     );
   });
 
+  it('does not submit a create with no SKU (Product Service has no auto-assignment)', () => {
+    productManagementService.createProduct.and.returnValue(of(undefined));
+    const fixture = TestBed.createComponent(ProductForm);
+    fixture.componentInstance.open({ mode: 'create' });
+    fixture.detectChanges();
+
+    fixture.componentInstance['form'].patchValue({ name: 'Widget', categoryId: 'cat-1', priceAmount: 9.99 });
+    fixture.componentInstance.submit();
+
+    expect(productManagementService.createProduct).not.toHaveBeenCalled();
+  });
+
   it('surfaces an error message on failure', () => {
     productManagementService.createProduct.and.returnValue(throwError(() => ({ error: { message: 'SKU taken.' } })));
     const fixture = TestBed.createComponent(ProductForm);
     fixture.componentInstance.open({ mode: 'create' });
     fixture.detectChanges();
-    fixture.componentInstance['form'].patchValue({ name: 'Widget', categoryId: 'cat-1', priceAmount: 9.99 });
+    fixture.componentInstance['form'].patchValue({ sku: 'SKU-1', name: 'Widget', categoryId: 'cat-1', priceAmount: 9.99 });
     fixture.componentInstance.submit();
     fixture.detectChanges();
 

@@ -15,6 +15,21 @@ export interface ProductFormContext {
   readonly product?: ProductResponse;
 }
 
+/**
+ * What actually landed, for the list to render immediately. The list's own data source
+ * (kart-search-service's OpenSearch index) only catches up with a create/update/deactivate a
+ * few seconds later via RabbitMQ - reloading from it right after a save briefly showed the old
+ * row (or none at all), which reads as "did my save even work?" to a real admin. This carries
+ * enough of the just-saved values for the list to patch its own row instead of waiting.
+ */
+export interface ProductSaved {
+  readonly sku: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly categoryId: string;
+  readonly price: { amount: number; currency: string };
+}
+
 /** CAT-1's create/edit modal. */
 @Component({
   selector: 'kart-product-form',
@@ -30,10 +45,13 @@ export class ProductForm {
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
-  readonly saved = output<void>();
+  readonly saved = output<ProductSaved>();
 
+  // sku is required: kart-admin-service's CreateProductCommandValidator rejects an empty SKU
+  // (Product Service has no auto-assignment path), so this is enforced client-side too - the
+  // control is disabled in edit mode, and disabled controls are excluded from form validity.
   protected readonly form = this.fb.nonNullable.group({
-    sku: [''],
+    sku: ['', [Validators.required]],
     name: ['', [Validators.required, Validators.maxLength(200)]],
     description: [''],
     categoryId: ['', [Validators.required]],
@@ -86,11 +104,13 @@ export class ProductForm {
         ? this.productManagementService.createProduct(formValue)
         : this.productManagementService.updateProduct(context.product!.sku, formValue, context.product!.lastUpdatedAt);
 
+    const sku = context.mode === 'create' ? value.sku : context.product!.sku;
+
     request$.subscribe({
       next: () => {
         this.submitting.set(false);
         this.close();
-        this.saved.emit();
+        this.saved.emit({ sku, name: value.name, description: formValue.description, categoryId: value.categoryId, price: formValue.price });
       },
       error: (error: unknown) => {
         this.submitting.set(false);

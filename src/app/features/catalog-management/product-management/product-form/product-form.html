@@ -9,7 +9,11 @@
 
   <form [formGroup]="form" (ngSubmit)="submit()">
     @if (context()?.mode === 'create') {
-      <kart-form-field label="SKU" inputId="product-form-sku" hint="Leave blank to let the catalog assign one, if supported.">
+      <kart-form-field
+        label="SKU"
+        inputId="product-form-sku"
+        [error]="form.controls.sku.invalid && form.controls.sku.touched ? 'SKU is required.' : null"
+      >
         <input id="product-form-sku" type="text" kartInput formControlName="sku" />
       </kart-form-field>
     }
