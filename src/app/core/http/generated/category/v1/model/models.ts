@@ -16,5 +16,29 @@ export interface Category {
   parentId?: string | null;
   ancestorPath?: string[];
   depth: number;
+  displayOrder: number;
+  status: CategoryStatus;
+}
+
+/**
+ * Attribute is a second aggregate added to kart-category-service for the "Category & Attribute
+ * Management (Admin)" flow (named catalog fields like "Color"/"Size", optionally scoped to one
+ * Category). Reads go straight to `GET /attributes` (this module); writes go through
+ * kart-admin-service's `/admin/attributes/*` proxy, mirroring Category's own read/write split.
+ */
+export type AttributeDataType = 'text' | 'number' | 'boolean' | 'select';
+
+export interface AttributeValue {
+  valueId: string;
+  value: string;
+  displayOrder: number;
+}
+
+export interface Attribute {
+  attributeId: string;
+  name: string;
+  categoryId?: string | null;
+  dataType: AttributeDataType;
+  values: AttributeValue[];
   status: CategoryStatus;
 }

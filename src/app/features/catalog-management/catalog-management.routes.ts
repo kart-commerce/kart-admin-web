@@ -14,6 +14,10 @@ export const catalogManagementRoutes: Routes = [
         loadComponent: () => import('./category-management/category-tree/category-tree').then((m) => m.CategoryTree),
       },
       {
+        path: 'attributes',
+        loadComponent: () => import('./attribute-management/attribute-list/attribute-list').then((m) => m.AttributeList),
+      },
+      {
         path: 'products',
         loadComponent: () => import('./product-management/product-list/product-list').then((m) => m.ProductList),
       },

@@ -46,7 +46,7 @@ describe('CategoryForm', () => {
     fixture.componentInstance.open({
       mode: 'edit',
       parentId: null,
-      category: { categoryId: 'cat-1', name: 'Old Name', depth: 0, status: 'active' },
+      category: { categoryId: 'cat-1', name: 'Old Name', depth: 0, displayOrder: 0, status: 'active' },
     });
     fixture.detectChanges();
 

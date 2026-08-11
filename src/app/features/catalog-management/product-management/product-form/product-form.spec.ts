@@ -1,17 +1,26 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 
+import { CategoryManagementService } from '../../category-management/data/category-management.service';
 import { ProductManagementService } from '../data/product-management.service';
 import { ProductForm } from './product-form';
 
 describe('ProductForm', () => {
   let productManagementService: jasmine.SpyObj<ProductManagementService>;
+  let categoryManagementService: jasmine.SpyObj<CategoryManagementService>;
 
   beforeEach(() => {
     productManagementService = jasmine.createSpyObj('ProductManagementService', ['createProduct', 'updateProduct']);
+    categoryManagementService = jasmine.createSpyObj('CategoryManagementService', ['listAllActiveCategoriesFlattened']);
+    categoryManagementService.listAllActiveCategoriesFlattened.and.returnValue(
+      of([{ categoryId: 'cat-1', label: 'Electronics', depth: 0 }]),
+    );
     TestBed.configureTestingModule({
       imports: [ProductForm],
-      providers: [{ provide: ProductManagementService, useValue: productManagementService }],
+      providers: [
+        { provide: ProductManagementService, useValue: productManagementService },
+        { provide: CategoryManagementService, useValue: categoryManagementService },
+      ],
     });
   });
 

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, firstValueFrom, from, map } from 'rxjs';
 
 import { AdminApiService } from '../../../../core/http/generated/admin/v1';
 import { Category, CategoryReadApiService } from '../../../../core/http/generated/category/v1';
@@ -8,6 +8,13 @@ export interface CategoryFormValue {
   name: string;
   parentId: string | null;
   displayOrder: number;
+}
+
+/** A flattened taxonomy entry for a `<select>`-style category picker (product form's `categoryId`, attribute form's category scope). */
+export interface CategoryOption {
+  categoryId: string;
+  label: string;
+  depth: number;
 }
 
 /**
@@ -69,5 +76,27 @@ export class CategoryManagementService {
 
   moveCategory(categoryId: string, newParentId: string | null): Observable<void> {
     return this.adminApi.moveCategory(categoryId, newParentId, crypto.randomUUID()).pipe(map(() => undefined));
+  }
+
+  /**
+   * Walks the whole active taxonomy (root-first, depth-first) into one flat, indented list -
+   * `GET /categories` has no bulk-tree endpoint (CategoryTree itself only ever fetches one level
+   * lazily), so a real category picker (product form's `categoryId`, attribute form's category
+   * scope) needs this eager walk instead. Fine for this platform's max depth of 4 and admin-only
+   * traffic; would need a real bulk endpoint if the taxonomy ever grew large enough for this to
+   * matter.
+   */
+  listAllActiveCategoriesFlattened(): Observable<CategoryOption[]> {
+    return from(this.walk(null, 0));
+  }
+
+  private async walk(parentId: string | null, depth: number): Promise<CategoryOption[]> {
+    const children = await firstValueFrom(this.listChildren(parentId));
+    const options: CategoryOption[] = [];
+    for (const child of children) {
+      options.push({ categoryId: child.categoryId, label: `${'—'.repeat(depth)} ${child.name}`.trim(), depth });
+      options.push(...(await this.walk(child.categoryId, depth + 1)));
+    }
+    return options;
   }
 }

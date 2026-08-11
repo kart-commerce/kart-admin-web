@@ -91,6 +91,25 @@ describe('AdminApiService', () => {
     req.flush({});
   });
 
+  it('createAttribute() POSTs to /admin/attributes', () => {
+    service.createAttribute({ name: 'Color', categoryId: null, dataType: 'select', values: [{ value: 'Red', displayOrder: 0 }] }, 'idem-1').subscribe();
+    httpMock.expectOne('/api/bff/gateway/v1/admin/attributes').flush({});
+  });
+
+  it('updateAttribute() PUTs to /admin/attributes/{id}', () => {
+    service.updateAttribute('attr-1', { name: 'Primary Color', values: [] }, 'idem-1').subscribe();
+    const req = httpMock.expectOne('/api/bff/gateway/v1/admin/attributes/attr-1');
+    expect(req.request.method).toBe('PUT');
+    req.flush({});
+  });
+
+  it('deprecateAttribute() DELETEs /admin/attributes/{id}', () => {
+    service.deprecateAttribute('attr-1', 'idem-1').subscribe();
+    const req = httpMock.expectOne('/api/bff/gateway/v1/admin/attributes/attr-1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({});
+  });
+
   it('createCoupon() POSTs to /admin/coupons', () => {
     service.createCoupon({ couponCode: 'SAVE10', discountValue: { amount: 10, currency: 'USD' } }, 'idem-1').subscribe();
     httpMock.expectOne('/api/bff/gateway/v1/admin/coupons').flush({});

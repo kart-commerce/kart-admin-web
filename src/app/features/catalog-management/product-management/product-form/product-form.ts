@@ -8,6 +8,7 @@ import { KartInput } from '../../../../shared/ui/kart-input.directive';
 import { Modal } from '../../../../shared/ui/modal/modal';
 import { extractErrorMessage } from '../../../../core/auth/problem';
 import { ProductResponse } from '../../../../core/http/generated/product/v1';
+import { CategoryManagementService, CategoryOption } from '../../category-management/data/category-management.service';
 import { ProductManagementService } from '../data/product-management.service';
 
 export interface ProductFormContext {
@@ -40,10 +41,21 @@ export interface ProductSaved {
 export class ProductForm {
   private readonly fb = inject(FormBuilder);
   private readonly productManagementService = inject(ProductManagementService);
+  private readonly categoryManagementService = inject(CategoryManagementService);
 
   protected readonly context = signal<ProductFormContext | null>(null);
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  /**
+   * The taxonomy, flattened for a real `<select>` picker - CAT-1's form previously had a raw
+   * free-text `categoryId` input, requiring an admin to already know and correctly type the
+   * category's id (see product-form's own prior doc history). Loaded once at construction,
+   * shared across every open() call (categories rarely change mid-session; CategoryTree's own
+   * write-through cache means a create/rename elsewhere in the same tab is reflected on next
+   * navigation anyway).
+   */
+  protected readonly categoryOptions = signal<CategoryOption[]>([]);
 
   readonly saved = output<ProductSaved>();
 
@@ -62,11 +74,12 @@ export class ProductForm {
   open(context: ProductFormContext): void {
     this.context.set(context);
     this.errorMessage.set(null);
+    const categoryId = context.product?.category?.id ?? '';
     this.form.reset({
       sku: context.product?.sku ?? '',
       name: context.product?.name ?? '',
       description: context.product?.description ?? '',
-      categoryId: context.product?.category?.id ?? '',
+      categoryId,
       priceAmount: context.product?.price?.amount ?? 0,
       priceCurrency: context.product?.price?.currency ?? 'USD',
     });
@@ -75,6 +88,14 @@ export class ProductForm {
     } else {
       this.form.controls.sku.enable();
     }
+
+    this.categoryManagementService.listAllActiveCategoriesFlattened().subscribe((options) => {
+      // Edit mode on a product whose categoryId no longer resolves to any active category (e.g.
+      // the category was since deprecated) still needs its current value selectable, rather than
+      // silently falling back to a blank/wrong selection - append it as a clearly-marked entry.
+      const hasCurrent = !categoryId || options.some((o) => o.categoryId === categoryId);
+      this.categoryOptions.set(hasCurrent ? options : [...options, { categoryId, label: `${categoryId} (not found)`, depth: 0 }]);
+    });
   }
 
   close(): void {

@@ -82,6 +82,25 @@ export interface CategoryWriteRequest {
   displayOrder?: number;
 }
 
+/** Added for the "Category & Attribute Management (Admin)" flow - mirrors Category Service's own POST /v1/attributes. categoryId null creates a global attribute. */
+export interface AttributeValueWriteRequest {
+  value: string;
+  displayOrder: number;
+}
+
+export interface AttributeWriteRequest {
+  name: string;
+  categoryId?: string | null;
+  dataType: string;
+  values?: AttributeValueWriteRequest[];
+}
+
+/** categoryId/dataType are immutable after creation, so the update shape omits them entirely. */
+export interface AttributeUpdateRequest {
+  name: string;
+  values?: AttributeValueWriteRequest[];
+}
+
 export interface CouponWriteRequest {
   couponCode: string;
   discountValue: Money;

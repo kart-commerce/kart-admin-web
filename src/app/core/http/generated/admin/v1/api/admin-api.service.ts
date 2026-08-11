@@ -5,6 +5,8 @@ import { Observable } from 'rxjs';
 import { GATEWAY_BASE_PATH } from '../../../../base-path';
 import {
   AdminActionResult,
+  AttributeUpdateRequest,
+  AttributeWriteRequest,
   CategoryWriteRequest,
   CouponAdminView,
   CouponWriteRequest,
@@ -125,6 +127,26 @@ export class AdminApiService {
       { newParentId },
       { headers: this.idempotencyHeaders(idempotencyKey) },
     );
+  }
+
+  // --- catalog-management: attributes -----------------------------------------
+
+  createAttribute(request: AttributeWriteRequest, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.post<AdminActionResult>(`${this.basePath}/admin/attributes`, request, {
+      headers: this.idempotencyHeaders(idempotencyKey),
+    });
+  }
+
+  updateAttribute(attributeId: string, request: AttributeUpdateRequest, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.put<AdminActionResult>(`${this.basePath}/admin/attributes/${encodeURIComponent(attributeId)}`, request, {
+      headers: this.idempotencyHeaders(idempotencyKey),
+    });
+  }
+
+  deprecateAttribute(attributeId: string, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.delete<AdminActionResult>(`${this.basePath}/admin/attributes/${encodeURIComponent(attributeId)}`, {
+      headers: this.idempotencyHeaders(idempotencyKey),
+    });
   }
 
   // --- coupon-issuance ---------------------------------------------------------

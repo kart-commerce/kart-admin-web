@@ -64,4 +64,24 @@ describe('CategoryManagementService', () => {
     service.moveCategory('cat-1', 'cat-2').subscribe();
     expect(adminApi.moveCategory).toHaveBeenCalledWith('cat-1', 'cat-2', jasmine.any(String));
   });
+
+  it('listAllActiveCategoriesFlattened() walks the tree depth-first into one indented list', (done) => {
+    categoryReadApi.listCategories.and.callFake(({ parentId } = {}) => {
+      if (parentId === undefined) {
+        return of([{ categoryId: 'electronics', name: 'Electronics', depth: 1, displayOrder: 0, status: 'active' as const }]);
+      }
+      if (parentId === 'electronics') {
+        return of([{ categoryId: 'phones', name: 'Phones', parentId: 'electronics', depth: 2, displayOrder: 0, status: 'active' as const }]);
+      }
+      return of([]);
+    });
+
+    service.listAllActiveCategoriesFlattened().subscribe((options) => {
+      expect(options).toEqual([
+        { categoryId: 'electronics', label: 'Electronics', depth: 0 },
+        { categoryId: 'phones', label: '— Phones', depth: 1 },
+      ]);
+      done();
+    });
+  });
 });
