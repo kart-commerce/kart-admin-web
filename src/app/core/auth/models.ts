@@ -22,7 +22,8 @@ export type GrantCategory =
   | 'user-suspension'
   | 'inventory-replenishment'
   | 'permission-management'
-  | 'compliance';
+  | 'compliance'
+  | 'order-management';
 
 export interface SessionInfo {
   readonly authenticated: boolean;

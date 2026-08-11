@@ -1,0 +1,33 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kart-spacing-md);
+}
+
+.kart-order-detail__summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--kart-spacing-sm);
+}
+
+.kart-order-detail__items {
+  width: 100%;
+  margin-top: var(--kart-spacing-sm);
+}
+
+.kart-order-detail__address-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--kart-spacing-xs);
+  margin-bottom: var(--kart-spacing-sm);
+}
+
+.kart-hint {
+  font-size: 0.875rem;
+  opacity: 0.75;
+}
+
+.kart-invoice {
+  margin-bottom: var(--kart-spacing-sm);
+}

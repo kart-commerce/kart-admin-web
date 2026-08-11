@@ -1,0 +1,199 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Order Detail</h1>
+    <a routerLink="/order-management/orders">&larr; Back to orders</a>
+  </div>
+
+  @if (loading()) {
+    <kart-spinner label="Loading order" />
+  } @else if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  } @else if (order(); as order) {
+    <kart-card>
+      <div class="kart-order-detail__summary">
+        <div>
+          <h2>{{ order.orderId }}</h2>
+          <p>Customer: {{ order.userId }}</p>
+        </div>
+        <kart-badge [variant]="statusBadgeVariant[order.status]">{{ order.status }}</kart-badge>
+      </div>
+      <p>Total: {{ order.totalAmount.amount | number: '1.2-2' }} {{ order.totalAmount.currency }}</p>
+      <p>Created: {{ order.createdAt | date: 'medium' }}</p>
+
+      <table class="kart-order-detail__items">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of order.items; track item.sku) {
+            <tr>
+              <td>{{ item.sku }}</td>
+              <td>{{ item.qty }}</td>
+              <td>{{ item.unitPrice.amount | number: '1.2-2' }} {{ item.unitPrice.currency }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </kart-card>
+
+    <!-- Cancel -->
+    @if (!isTerminal(order.status) && order.status !== 'Shipped' && order.status !== 'Delivered') {
+      <kart-card>
+        <h3>Cancel Order</h3>
+        @if (cancelError()) {
+          <kart-alert variant="danger">{{ cancelError() }}</kart-alert>
+        }
+        <div class="kart-form-row">
+          <input type="text" kartInput placeholder="Reason (optional)" [(ngModel)]="cancelReason" />
+          <kart-button variant="danger" [loading]="cancelling()" (click)="cancel()">Cancel Order</kart-button>
+        </div>
+      </kart-card>
+    }
+
+    <!-- Update Status -->
+    @if (!isTerminal(order.status)) {
+      <kart-card>
+        <h3>Update Status</h3>
+        <p class="kart-hint">Ops-recovery fallback for when the normal event-driven trigger stalled — Order Service itself only accepts these three targets.</p>
+        @if (statusError()) {
+          <kart-alert variant="danger">{{ statusError() }}</kart-alert>
+        }
+        <div class="kart-form-row">
+          <select kartInput [(ngModel)]="statusTarget" aria-label="Target status">
+            <option value="">Select target status&hellip;</option>
+            @for (target of adminStatusTargets; track target) {
+              <option [value]="target">{{ target }}</option>
+            }
+          </select>
+          <input type="text" kartInput placeholder="Reason" [(ngModel)]="statusReason" />
+          <kart-button [loading]="updatingStatus()" [disabled]="!statusTarget || !statusReason.trim()" (click)="updateStatus()">
+            Update Status
+          </kart-button>
+        </div>
+      </kart-card>
+    }
+
+    <!-- Shipping Address -->
+    @if (order.status !== 'Shipped' && !isTerminal(order.status)) {
+      <kart-card>
+        <h3>Shipping Address</h3>
+        @if (addressError()) {
+          <kart-alert variant="danger">{{ addressError() }}</kart-alert>
+        }
+        <div class="kart-order-detail__address-form">
+          <input type="text" kartInput placeholder="Recipient name" [(ngModel)]="addressForm.recipientName" />
+          <input type="text" kartInput placeholder="Address line 1" [(ngModel)]="addressForm.line1" />
+          <input type="text" kartInput placeholder="Address line 2 (optional)" [(ngModel)]="addressForm.line2" />
+          <input type="text" kartInput placeholder="City" [(ngModel)]="addressForm.city" />
+          <input type="text" kartInput placeholder="State" [(ngModel)]="addressForm.state" />
+          <input type="text" kartInput placeholder="Postal code" [(ngModel)]="addressForm.postalCode" />
+          <input type="text" kartInput placeholder="Country" [(ngModel)]="addressForm.country" />
+          <input type="text" kartInput placeholder="Phone (optional)" [(ngModel)]="addressForm.phone" />
+        </div>
+        <kart-button
+          [loading]="savingAddress()"
+          [disabled]="!addressForm.recipientName.trim() || !addressForm.line1.trim() || !addressForm.city.trim() || !addressForm.state.trim() || !addressForm.postalCode.trim() || !addressForm.country.trim()"
+          (click)="saveAddress()"
+        >
+          Save Address
+        </kart-button>
+      </kart-card>
+    }
+
+    <!-- Trigger Shipment -->
+    @if (order.status === 'Paid') {
+      <kart-card>
+        <h3>Trigger Shipment</h3>
+        <p class="kart-hint">Records the admin's intent to ship — kart-shipping-service doesn't exist yet (flow #8's scope), so this durably publishes the request with no automated fulfillment side effect yet.</p>
+        @if (shipmentError()) {
+          <kart-alert variant="danger">{{ shipmentError() }}</kart-alert>
+        }
+        <kart-button [loading]="requestingShipment()" (click)="requestShipment()">Request Shipment</kart-button>
+      </kart-card>
+    }
+
+    <!-- Handle Escalation -->
+    @if (order.status === 'FulfillmentException') {
+      <kart-resolve-fulfillment-exception [order]="order" (resolved)="onOrderUpdated($event)" />
+    }
+
+    <!-- Generate Invoice -->
+    <kart-card>
+      <h3>Invoice</h3>
+      @if (invoiceError()) {
+        <kart-alert variant="danger">{{ invoiceError() }}</kart-alert>
+      }
+      @if (!invoice()) {
+        <kart-button variant="secondary" [loading]="loadingInvoice()" (click)="viewInvoice()">View Invoice</kart-button>
+      } @else if (invoice(); as invoice) {
+        <div class="kart-invoice">
+          <p><strong>Invoice {{ invoice.invoiceNumber }}</strong></p>
+          <p>Issued: {{ invoice.issuedAt | date: 'medium' }}</p>
+          <table class="kart-order-detail__items">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of invoice.items; track item.sku) {
+                <tr>
+                  <td>{{ item.sku }}</td>
+                  <td>{{ item.qty }}</td>
+                  <td>{{ item.unitPrice.amount | number: '1.2-2' }} {{ item.unitPrice.currency }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <p>Total: {{ invoice.total.amount | number: '1.2-2' }} {{ invoice.total.currency }}</p>
+        </div>
+        <kart-button variant="secondary" (click)="printInvoice()">Print</kart-button>
+      }
+    </kart-card>
+
+    <!-- Assign Warehouse (read-only view) -->
+    <kart-card>
+      <h3>Warehouse Allocations</h3>
+      <p class="kart-hint">Warehouse allocation itself is fully automatic — this is read-only visibility into the decision the system already made.</p>
+      @if (allocationsError()) {
+        <kart-alert variant="danger">{{ allocationsError() }}</kart-alert>
+      }
+      @if (!allocations()) {
+        <kart-button variant="secondary" [loading]="loadingAllocations()" (click)="viewWarehouseAllocations()">View Warehouse Allocations</kart-button>
+      } @else if (allocations(); as allocations) {
+        @if (allocations.length === 0) {
+          <p>No reservations were ever made for this order.</p>
+        } @else {
+          <table class="kart-order-detail__items">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Reservation Status</th>
+                <th>Warehouse</th>
+                <th>Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (reservation of allocations; track reservation.reservationId) {
+                @for (allocation of reservation.allocations; track allocation.warehouseId) {
+                  <tr>
+                    <td>{{ reservation.sku }}</td>
+                    <td>{{ reservation.status }}</td>
+                    <td>{{ allocation.warehouseId }}</td>
+                    <td>{{ allocation.qty }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        }
+      }
+    </kart-card>
+  }
+</div>

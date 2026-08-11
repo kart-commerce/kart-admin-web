@@ -9,7 +9,8 @@ export type GrantCategory =
   | 'user-suspension'
   | 'inventory-replenishment'
   | 'permission-management'
-  | 'compliance';
+  | 'compliance'
+  | 'order-management';
 
 /**
  * Runtime companion to the `GrantCategory` type, regenerated in lockstep
@@ -28,12 +29,29 @@ export const GRANT_CATEGORIES: readonly GrantCategory[] = [
   'inventory-replenishment',
   'permission-management',
   'compliance',
+  'order-management',
 ];
 
 export interface Money {
   amount: number;
   currency: string;
 }
+
+/** Order Management (Admin) flow #7 — mirrors kart-order-service's own ShippingAddress request shape exactly. */
+export interface ShippingAddressWriteRequest {
+  recipientName: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string | null;
+}
+
+export type AdminOrderStatusTarget = 'Shipped' | 'Delivered' | 'FulfillmentException';
+
+export type FulfillmentExceptionAction = 'retry' | 'cancel';
 
 export interface Problem {
   code: string;
