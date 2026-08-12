@@ -1,0 +1,18 @@
+@if (authService.grantsDegradedNotice()) {
+  <div class="kart-grants-degraded-toast" role="alert">
+    <div class="kart-grants-degraded-toast__accent" aria-hidden="true"></div>
+    <div class="kart-grants-degraded-toast__body">
+      <div class="kart-grants-degraded-toast__header">
+        <span class="kart-grants-degraded-toast__icon" aria-hidden="true">&#9888;</span>
+        <p class="kart-grants-degraded-toast__message">
+          You're signed in, but we couldn't confirm your permission grants just now! Some
+          screens may be hidden until this is resolved. Reloading once the issue clears will
+          pick up your real grants.
+        </p>
+      </div>
+      <div class="kart-grants-degraded-toast__actions">
+        <kart-button variant="secondary" (click)="dismiss()">Dismiss</kart-button>
+      </div>
+    </div>
+  </div>
+}

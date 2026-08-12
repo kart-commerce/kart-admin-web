@@ -1,17 +1,26 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 
+import { CategoryManagementService } from '../../category-management/data/category-management.service';
 import { ProductManagementService } from '../data/product-management.service';
 import { ProductForm } from './product-form';
 
 describe('ProductForm', () => {
   let productManagementService: jasmine.SpyObj<ProductManagementService>;
+  let categoryManagementService: jasmine.SpyObj<CategoryManagementService>;
 
   beforeEach(() => {
     productManagementService = jasmine.createSpyObj('ProductManagementService', ['createProduct', 'updateProduct']);
+    categoryManagementService = jasmine.createSpyObj('CategoryManagementService', ['listAllActiveCategoriesFlattened']);
+    categoryManagementService.listAllActiveCategoriesFlattened.and.returnValue(
+      of([{ categoryId: 'cat-1', label: 'Electronics', depth: 0 }]),
+    );
     TestBed.configureTestingModule({
       imports: [ProductForm],
-      providers: [{ provide: ProductManagementService, useValue: productManagementService }],
+      providers: [
+        { provide: ProductManagementService, useValue: productManagementService },
+        { provide: CategoryManagementService, useValue: categoryManagementService },
+      ],
     });
   });
 
@@ -65,12 +74,24 @@ describe('ProductForm', () => {
     );
   });
 
+  it('does not submit a create with no SKU (Product Service has no auto-assignment)', () => {
+    productManagementService.createProduct.and.returnValue(of(undefined));
+    const fixture = TestBed.createComponent(ProductForm);
+    fixture.componentInstance.open({ mode: 'create' });
+    fixture.detectChanges();
+
+    fixture.componentInstance['form'].patchValue({ name: 'Widget', categoryId: 'cat-1', priceAmount: 9.99 });
+    fixture.componentInstance.submit();
+
+    expect(productManagementService.createProduct).not.toHaveBeenCalled();
+  });
+
   it('surfaces an error message on failure', () => {
     productManagementService.createProduct.and.returnValue(throwError(() => ({ error: { message: 'SKU taken.' } })));
     const fixture = TestBed.createComponent(ProductForm);
     fixture.componentInstance.open({ mode: 'create' });
     fixture.detectChanges();
-    fixture.componentInstance['form'].patchValue({ name: 'Widget', categoryId: 'cat-1', priceAmount: 9.99 });
+    fixture.componentInstance['form'].patchValue({ sku: 'SKU-1', name: 'Widget', categoryId: 'cat-1', priceAmount: 9.99 });
     fixture.componentInstance.submit();
     fixture.detectChanges();
 

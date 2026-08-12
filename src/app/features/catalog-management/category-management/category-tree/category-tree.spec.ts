@@ -8,8 +8,8 @@ describe('CategoryTree', () => {
   let categoryManagementService: jasmine.SpyObj<CategoryManagementService>;
 
   const rootCategories = [
-    { categoryId: 'electronics', name: 'Electronics', depth: 0, status: 'active' as const },
-    { categoryId: 'fashion', name: 'Fashion', depth: 0, status: 'active' as const },
+    { categoryId: 'electronics', name: 'Electronics', depth: 0, displayOrder: 0, status: 'active' as const },
+    { categoryId: 'fashion', name: 'Fashion', depth: 0, displayOrder: 1, status: 'active' as const },
   ];
 
   beforeEach(() => {
@@ -53,7 +53,7 @@ describe('CategoryTree', () => {
     fixture.detectChanges();
 
     categoryManagementService.listChildren.and.returnValue(
-      of([{ categoryId: 'phones', name: 'Phones', parentId: 'electronics', depth: 1, status: 'active' as const }]),
+      of([{ categoryId: 'phones', name: 'Phones', parentId: 'electronics', depth: 1, displayOrder: 0, status: 'active' as const }]),
     );
     fixture.componentInstance.toggle(fixture.componentInstance['nodes']()[0]);
     fixture.detectChanges();

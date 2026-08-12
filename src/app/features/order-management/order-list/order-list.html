@@ -1,0 +1,61 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Order Management</h1>
+  </div>
+
+  <div class="kart-order-list__filters">
+    <select kartInput [(ngModel)]="statusFilter" aria-label="Filter by status">
+      <option value="">All statuses</option>
+      @for (status of statuses; track status) {
+        <option [value]="status">{{ status }}</option>
+      }
+    </select>
+    <input type="text" kartInput placeholder="Customer user ID" [(ngModel)]="userIdFilter" (keyup.enter)="search()" />
+    <input type="date" kartInput [(ngModel)]="createdFromFilter" aria-label="Created from" />
+    <input type="date" kartInput [(ngModel)]="createdToFilter" aria-label="Created to" />
+    <kart-button variant="secondary" (click)="search()">Search</kart-button>
+  </div>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && results().length === 0"
+    emptyTitle="No orders found"
+    emptyDescription="Try a different filter."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Status</th>
+          <th>Total</th>
+          <th>Created</th>
+          <th>Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of results(); track order.orderId) {
+          <tr>
+            <td>{{ order.orderId }}</td>
+            <td>{{ order.userId }}</td>
+            <td><kart-badge [variant]="statusBadgeVariant[order.status]">{{ order.status }}</kart-badge></td>
+            <td>{{ order.totalAmount.amount | number: '1.2-2' }} {{ order.totalAmount.currency }}</td>
+            <td>{{ order.createdAt | date }}</td>
+            <td>{{ order.updatedAt | date }}</td>
+            <td>
+              <kart-button variant="secondary" [routerLink]="['/order-management/orders', order.orderId]">View</kart-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </kart-data-table-shell>
+
+  <div class="kart-order-list__pagination">
+    <kart-button variant="secondary" [disabled]="page() <= 1" (click)="previousPage()">Previous</kart-button>
+    <span>Page {{ page() }} — {{ totalCount() }} total</span>
+    <kart-button variant="secondary" [disabled]="page() * pageSize >= totalCount()" (click)="nextPage()">Next</kart-button>
+  </div>
+</div>

@@ -37,7 +37,15 @@ describe('AuthService', () => {
     service.loadSession().subscribe();
     const req = httpMock.expectOne('/api/bff/session');
     expect(req.request.method).toBe('GET');
-    req.flush({ authenticated: true, role: 'admin', principalId: 'p1', grants: [], loginAt: null, absoluteCapAt: null });
+    req.flush({
+      authenticated: true,
+      role: 'admin',
+      principalId: 'p1',
+      grants: [],
+      grantsDegraded: false,
+      loginAt: null,
+      absoluteCapAt: null,
+    });
 
     expect(service.session().authenticated).toBeTrue();
     expect(service.session().role).toBe('admin');
@@ -54,6 +62,7 @@ describe('AuthService', () => {
         role: 'support_agent',
         principalId: 'p2',
         grants: [],
+        grantsDegraded: false,
         loginAt: new Date().toISOString(),
         absoluteCapAt: new Date().toISOString(),
       },
@@ -61,6 +70,24 @@ describe('AuthService', () => {
 
     expect(service.session().role).toBe('support_agent');
     expect(broadcast.post).toHaveBeenCalledWith({ type: 'login' });
+  });
+
+  it('login() sets grantsDegradedNotice when kart-admin-service could not be reached', () => {
+    service.login({ email: 'a@b.com', password: 'secret' }).subscribe();
+    httpMock.expectOne('/api/bff/auth/native/login').flush({
+      status: 'authenticated',
+      session: {
+        authenticated: true,
+        role: 'support_agent',
+        principalId: 'p2',
+        grants: [],
+        grantsDegraded: true,
+        loginAt: new Date().toISOString(),
+        absoluteCapAt: new Date().toISOString(),
+      },
+    });
+
+    expect(service.grantsDegradedNotice()).toBeTrue();
   });
 
   it('login() surfaces an MFA challenge without establishing a session', () => {
@@ -82,12 +109,28 @@ describe('AuthService', () => {
       role: 'support_agent',
       principalId: 'p2',
       grants: [],
+      grantsDegraded: false,
       loginAt: new Date().toISOString(),
       absoluteCapAt: new Date().toISOString(),
     });
 
     expect(service.session().role).toBe('support_agent');
     expect(broadcast.post).toHaveBeenCalledWith({ type: 'login' });
+  });
+
+  it('verifyMfa() sets grantsDegradedNotice when kart-admin-service could not be reached', () => {
+    service.verifyMfa({ challengeId: 'c1', totpCode: '123456' }).subscribe();
+    httpMock.expectOne('/api/bff/auth/native/mfa/verify').flush({
+      authenticated: true,
+      role: 'support_agent',
+      principalId: 'p2',
+      grants: [],
+      grantsDegraded: true,
+      loginAt: new Date().toISOString(),
+      absoluteCapAt: new Date().toISOString(),
+    });
+
+    expect(service.grantsDegradedNotice()).toBeTrue();
   });
 
   it('logout() clears the session and broadcasts logout', () => {

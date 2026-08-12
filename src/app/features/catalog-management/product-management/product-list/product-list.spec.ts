@@ -58,7 +58,9 @@ describe('ProductList', () => {
     expect(fixture.nativeElement.textContent).toContain('Search down');
   });
 
-  it('deactivates a product after confirmation and reloads', () => {
+  it('deactivates a product after confirmation and removes it from the list locally', () => {
+    // Not a reload: kart-search-service's index only catches up with the deactivate a few
+    // seconds later via RabbitMQ, so reloading here would still list it as Active.
     spyOn(window, 'confirm').and.returnValue(true);
     productManagementService.deactivateProduct.and.returnValue(of(undefined));
     const fixture = TestBed.createComponent(ProductList);
@@ -67,7 +69,32 @@ describe('ProductList', () => {
     fixture.componentInstance.deactivate(searchResponse.results[0]);
 
     expect(productManagementService.deactivateProduct).toHaveBeenCalledWith('SKU-1');
-    expect(productManagementService.listProducts).toHaveBeenCalledTimes(2);
+    expect(productManagementService.listProducts).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance['results']()).toEqual([]);
+  });
+
+  it('onSaved prepends a newly created product without waiting for a reload', () => {
+    const fixture = TestBed.createComponent(ProductList);
+    fixture.detectChanges();
+
+    fixture.componentInstance.onSaved({ sku: 'SKU-2', name: 'Gadget', categoryId: 'cat-2', price: { amount: 5, currency: 'USD' } });
+
+    expect(productManagementService.listProducts).toHaveBeenCalledTimes(1);
+    const results = fixture.componentInstance['results']();
+    expect(results.map((r) => r.sku)).toEqual(['SKU-2', 'SKU-1']);
+  });
+
+  it('onSaved patches an existing product in place, preserving its brand and rating', () => {
+    const fixture = TestBed.createComponent(ProductList);
+    fixture.detectChanges();
+
+    fixture.componentInstance.onSaved({ sku: 'SKU-1', name: 'Widget v2', categoryId: 'cat-1', price: { amount: 12.5, currency: 'USD' } });
+
+    const [result] = fixture.componentInstance['results']();
+    expect(result.name).toBe('Widget v2');
+    expect(result.price).toEqual({ amount: 12.5, currency: 'USD' });
+    expect(result.brand).toBe('Acme');
+    expect(result.rating).toEqual({ avg: 4.5, count: 10 });
   });
 
   it('does not deactivate without confirmation', () => {

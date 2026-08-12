@@ -5,9 +5,13 @@ import { Observable } from 'rxjs';
 import { GATEWAY_BASE_PATH } from '../../../../base-path';
 import {
   AdminActionResult,
+  AdminOrderStatusTarget,
+  AttributeUpdateRequest,
+  AttributeWriteRequest,
   CategoryWriteRequest,
   CouponAdminView,
   CouponWriteRequest,
+  FulfillmentExceptionAction,
   GrantCategory,
   IssuePermissionGrantRequest,
   LockUserRequest,
@@ -17,12 +21,14 @@ import {
   PrivacyRequestStatus,
   ProductWriteRequest,
   ReplenishInventoryRequest,
+  ShippingAddressWriteRequest,
 } from '../model/models';
 
 /**
- * Typed client for kart-admin-service's api-contract.yaml (16 paths). Every
- * mutating call requires `Idempotency-Key` per that contract's own header
- * note ("back-office actions are the platform's highest-privilege
+ * Typed client for kart-admin-service's api-contract.yaml (21 paths, Order
+ * Management (Admin) flow #7 added the five order ones). Every mutating
+ * call requires `Idempotency-Key` per that contract's own header note
+ * ("back-office actions are the platform's highest-privilege
  * operations... every mutating /admin/* action" requires it, including
  * grant issue/revoke). Callers pass one explicitly (`crypto.randomUUID()`)
  * rather than this service inventing one, so a caller can retry the exact
@@ -127,6 +133,26 @@ export class AdminApiService {
     );
   }
 
+  // --- catalog-management: attributes -----------------------------------------
+
+  createAttribute(request: AttributeWriteRequest, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.post<AdminActionResult>(`${this.basePath}/admin/attributes`, request, {
+      headers: this.idempotencyHeaders(idempotencyKey),
+    });
+  }
+
+  updateAttribute(attributeId: string, request: AttributeUpdateRequest, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.put<AdminActionResult>(`${this.basePath}/admin/attributes/${encodeURIComponent(attributeId)}`, request, {
+      headers: this.idempotencyHeaders(idempotencyKey),
+    });
+  }
+
+  deprecateAttribute(attributeId: string, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.delete<AdminActionResult>(`${this.basePath}/admin/attributes/${encodeURIComponent(attributeId)}`, {
+      headers: this.idempotencyHeaders(idempotencyKey),
+    });
+  }
+
   // --- coupon-issuance ---------------------------------------------------------
 
   createCoupon(request: CouponWriteRequest, idempotencyKey: string): Observable<AdminActionResult> {
@@ -176,6 +202,53 @@ export class AdminApiService {
     return this.http.post<AdminActionResult>(
       `${this.basePath}/admin/inventory/${encodeURIComponent(sku)}/replenish`,
       request,
+      { headers: this.idempotencyHeaders(idempotencyKey) },
+    );
+  }
+
+  // --- order-management (Order Management (Admin) flow #7) -------------------------
+
+  cancelOrder(orderId: string, reason: string | null, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.post<AdminActionResult>(
+      `${this.basePath}/admin/orders/${encodeURIComponent(orderId)}/cancel`,
+      reason === null ? {} : { reason },
+      { headers: this.idempotencyHeaders(idempotencyKey) },
+    );
+  }
+
+  updateOrderStatus(
+    orderId: string,
+    targetStatus: AdminOrderStatusTarget,
+    reason: string,
+    idempotencyKey: string,
+  ): Observable<AdminActionResult> {
+    return this.http.patch<AdminActionResult>(
+      `${this.basePath}/admin/orders/${encodeURIComponent(orderId)}/status`,
+      { targetStatus, reason },
+      { headers: this.idempotencyHeaders(idempotencyKey) },
+    );
+  }
+
+  updateOrderShippingAddress(orderId: string, request: ShippingAddressWriteRequest, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.patch<AdminActionResult>(
+      `${this.basePath}/admin/orders/${encodeURIComponent(orderId)}/shipping-address`,
+      request,
+      { headers: this.idempotencyHeaders(idempotencyKey) },
+    );
+  }
+
+  requestOrderShipment(orderId: string, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.post<AdminActionResult>(
+      `${this.basePath}/admin/orders/${encodeURIComponent(orderId)}/request-shipment`,
+      null,
+      { headers: this.idempotencyHeaders(idempotencyKey) },
+    );
+  }
+
+  resolveOrderFulfillmentException(orderId: string, action: FulfillmentExceptionAction, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.post<AdminActionResult>(
+      `${this.basePath}/admin/orders/${encodeURIComponent(orderId)}/resolve-fulfillment-exception`,
+      { action },
       { headers: this.idempotencyHeaders(idempotencyKey) },
     );
   }

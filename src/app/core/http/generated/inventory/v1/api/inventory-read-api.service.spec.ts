@@ -18,14 +18,14 @@ describe('InventoryReadApiService', () => {
 
   it('getStockLevel() GETs /inventory/{sku} with an optional warehouseId', () => {
     service.getStockLevel('SKU-1', 'wh-1').subscribe();
-    const req = httpMock.expectOne((r) => r.url === '/v1/inventory/SKU-1');
+    const req = httpMock.expectOne((r) => r.url === '/api/bff/gateway/v1/inventory/SKU-1');
     expect(req.request.params.get('warehouseId')).toBe('wh-1');
     req.flush({ sku: 'SKU-1', availableQty: 0 });
   });
 
   it('getStockLevel() omits warehouseId when not given', () => {
     service.getStockLevel('SKU-1').subscribe();
-    const req = httpMock.expectOne((r) => r.url === '/v1/inventory/SKU-1');
+    const req = httpMock.expectOne((r) => r.url === '/api/bff/gateway/v1/inventory/SKU-1');
     expect(req.request.params.has('warehouseId')).toBeFalse();
     req.flush({ sku: 'SKU-1', availableQty: 0 });
   });

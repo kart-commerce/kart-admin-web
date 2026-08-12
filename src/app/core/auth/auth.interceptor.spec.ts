@@ -48,4 +48,23 @@ describe('authInterceptor', () => {
 
     expect(errored).toBeTrue();
   });
+
+  it('coalesces two requests that 401 around the same time into a single refresh call', () => {
+    let resultA: unknown;
+    let resultB: unknown;
+    http.get('/v1/admin/actions').subscribe((res) => (resultA = res));
+    http.get('/v1/admin/widgets').subscribe((res) => (resultB = res));
+
+    httpMock.expectOne('/v1/admin/actions').flush(null, { status: 401, statusText: 'Unauthorized' });
+    httpMock.expectOne('/v1/admin/widgets').flush(null, { status: 401, statusText: 'Unauthorized' });
+
+    // Only one refresh call should go out even though both requests 401'd.
+    httpMock.expectOne('/api/bff/auth/refresh').flush({});
+
+    httpMock.expectOne('/v1/admin/actions').flush({ ok: 'actions' });
+    httpMock.expectOne('/v1/admin/widgets').flush({ ok: 'widgets' });
+
+    expect(resultA).toEqual({ ok: 'actions' });
+    expect(resultB).toEqual({ ok: 'widgets' });
+  });
 });

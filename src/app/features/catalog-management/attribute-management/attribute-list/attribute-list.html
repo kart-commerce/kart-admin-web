@@ -1,0 +1,46 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>Attribute Management</h1>
+    <kart-button variant="primary" *kartRequiresGrant="'catalog-management'" (click)="create()">Create attribute</kart-button>
+  </div>
+
+  <kart-data-table-shell
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [empty]="!loading() && !errorMessage() && results().length === 0"
+    emptyTitle="No attributes yet"
+    emptyDescription="Create an attribute to describe products (e.g. Color, Size)."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Data type</th>
+          <th>Values</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of results(); track item.attributeId) {
+          <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.categoryId ?? 'Global' }}</td>
+            <td>{{ item.dataType }}</td>
+            <td>{{ item.values.length ? item.values.map((v) => v.value).join(', ') : '—' }}</td>
+            <td>{{ item.status }}</td>
+            <td class="kart-attribute-list__actions" *kartRequiresGrant="'catalog-management'">
+              <kart-button variant="secondary" (click)="edit(item)">Edit</kart-button>
+              <kart-button variant="danger" [loading]="deprecatingId() === item.attributeId" (click)="deprecate(item)">
+                Deprecate
+              </kart-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </kart-data-table-shell>
+</div>
+
+<kart-attribute-form (saved)="onSaved()" />

@@ -1,9 +1,4 @@
 {
-  "/v1": {
-    "target": "http://localhost:5290",
-    "secure": false,
-    "changeOrigin": true
-  },
   "/api/bff": {
     "target": "http://localhost:4000",
     "secure": false,

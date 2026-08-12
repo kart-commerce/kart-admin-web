@@ -18,8 +18,9 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withFetch(), withInterceptors([mutatingRequestInterceptor, authInterceptor])),
     // core/http/generated/**'s GATEWAY_BASE_PATH already defaults to
-    // same-origin '/v1' (base-path.ts) — this app is CSR-only, so unlike
-    // kart-web there's no server/browser branching to provide here.
+    // same-origin '/api/bff/gateway/v1' (base-path.ts), the BFF's
+    // token-relay proxy — this app is CSR-only, so unlike kart-web there's
+    // no server/browser branching to provide here.
     ...provideAppConfig(),
   ],
 };
