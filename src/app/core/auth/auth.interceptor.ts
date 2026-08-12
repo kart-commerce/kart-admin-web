@@ -1,6 +1,8 @@
-import { HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
+
+import { RefreshCoordinatorService } from './refresh-coordinator.service';
 
 /**
  * Silent-refresh interceptor (AUTH-3): on a single 401 from a BFF-proxied
@@ -14,15 +16,22 @@ import { catchError, switchMap, throwError } from 'rxjs';
  * timer: a request only happens as a result of the user (or a
  * user-triggered load) doing something in this tab, so a backgrounded/idle
  * tab making no requests never triggers a refresh here either.
+ *
+ * Refresh calls go through `RefreshCoordinatorService` rather than a bare
+ * `http.post` so that several requests 401ing around the same moment (a
+ * dashboard firing multiple widget calls, say) share one refresh instead of
+ * each racing to rotate the same single-use refresh token — see that
+ * service's doc comment for why the naive per-request version logs the user
+ * out.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const http = inject(HttpClient);
+  const refreshCoordinator = inject(RefreshCoordinatorService);
 
   return next(req).pipe(
     catchError((error: unknown) => {
       const isAuthRoute = req.url.startsWith('/api/bff/auth/');
       if (error instanceof HttpErrorResponse && error.status === 401 && !isAuthRoute) {
-        return http.post('/api/bff/auth/refresh', {}).pipe(
+        return refreshCoordinator.refresh().pipe(
           switchMap(() => next(req)),
           catchError(() => throwError(() => error)),
         );

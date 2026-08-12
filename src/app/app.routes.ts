@@ -18,6 +18,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/order-exceptions/order-exceptions.routes').then((m) => m.orderExceptionsRoutes),
   },
   {
+    path: 'order-management',
+    canActivate: [authenticatedGuard],
+    loadChildren: () => import('./features/order-management/order-management.routes').then((m) => m.orderManagementRoutes),
+  },
+  {
     path: 'support-console',
     canActivate: [authenticatedGuard],
     loadChildren: () => import('./features/support-console/support-console.routes').then((m) => m.supportConsoleRoutes),

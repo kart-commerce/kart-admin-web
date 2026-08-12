@@ -1,0 +1,20 @@
+.kart-catalog-nav {
+  display: flex;
+  gap: var(--kart-spacing-lg);
+  padding: 0 var(--kart-spacing-lg);
+  border-bottom: 1px solid var(--kart-color-border);
+}
+
+.kart-catalog-nav a {
+  display: inline-block;
+  padding: var(--kart-spacing-sm) 0;
+  color: var(--kart-color-text-muted);
+  text-decoration: none;
+  font-weight: var(--kart-font-weight-medium);
+  border-bottom: 2px solid transparent;
+}
+
+.kart-catalog-nav a.kart-catalog-nav__link--active {
+  color: var(--kart-color-primary);
+  border-bottom-color: var(--kart-color-primary);
+}

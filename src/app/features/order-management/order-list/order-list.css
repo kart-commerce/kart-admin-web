@@ -1,0 +1,13 @@
+.kart-order-list__filters {
+  display: flex;
+  gap: var(--kart-spacing-xs);
+  flex-wrap: wrap;
+  margin-bottom: var(--kart-spacing-md);
+}
+
+.kart-order-list__pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--kart-spacing-sm);
+  margin-top: var(--kart-spacing-md);
+}

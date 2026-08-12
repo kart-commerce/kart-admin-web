@@ -30,6 +30,19 @@ export class AuthService {
   /** Current session state; starts unauthenticated until the first `loadSession()` resolves. */
   readonly session = signal<SessionInfo>(UNAUTHENTICATED_SESSION);
 
+  /**
+   * True right after a login that completed but couldn't confirm this principal's real
+   * grants (kart-admin-service unreachable/erroring) — drives `GrantsDegradedToast`. Set
+   * only on a *fresh* login (native login, MFA verify) rather than on every `loadSession()`
+   * (which also runs on ordinary page reloads of an already-authenticated tab, where
+   * re-showing the same toast every refresh would be noise, not signal).
+   */
+  readonly grantsDegradedNotice = signal(false);
+
+  dismissGrantsDegradedNotice(): void {
+    this.grantsDegradedNotice.set(false);
+  }
+
   constructor() {
     this.broadcast.messages$.subscribe((message) => {
       if (message.type === 'logout') {
@@ -58,6 +71,7 @@ export class AuthService {
     return this.http.post<SessionInfo>('/api/bff/auth/native/mfa/verify', request).pipe(
       tap((session) => {
         this.session.set(session);
+        this.grantsDegradedNotice.set(session.grantsDegraded);
         this.broadcast.post({ type: 'login' });
       }),
     );
@@ -80,6 +94,7 @@ export class AuthService {
   private applyLoginResult(result: NativeLoginResult): void {
     if (result.status === 'authenticated') {
       this.session.set(result.session);
+      this.grantsDegradedNotice.set(result.session.grantsDegraded);
       this.broadcast.post({ type: 'login' });
     }
   }

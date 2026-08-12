@@ -1,0 +1,55 @@
+<kart-modal
+  [open]="context() !== null"
+  [titleText]="context()?.mode === 'create' ? 'Create attribute' : 'Edit attribute'"
+  (dismiss)="close()"
+>
+  @if (errorMessage()) {
+    <kart-alert variant="danger">{{ errorMessage() }}</kart-alert>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <kart-form-field
+      label="Name"
+      inputId="attribute-form-name"
+      [error]="form.controls.name.invalid && form.controls.name.touched ? 'Enter an attribute name (max 200 characters).' : null"
+    >
+      <input id="attribute-form-name" type="text" kartInput formControlName="name" />
+    </kart-form-field>
+
+    <kart-form-field label="Category" inputId="attribute-form-category">
+      <select id="attribute-form-category" kartInput formControlName="categoryId">
+        <option value="">Global (any category)</option>
+        @for (option of categoryOptions(); track option.categoryId) {
+          <option [value]="option.categoryId">{{ option.label }}</option>
+        }
+      </select>
+    </kart-form-field>
+
+    <kart-form-field label="Data type" inputId="attribute-form-data-type">
+      <select id="attribute-form-data-type" kartInput formControlName="dataType">
+        @for (type of dataTypes; track type) {
+          <option [value]="type">{{ type }}</option>
+        }
+      </select>
+    </kart-form-field>
+
+    @if (isSelectType) {
+      <div class="kart-attribute-form__values">
+        <label>Values</label>
+        @for (group of valuesArray.controls; track $index) {
+          <div class="kart-form-row" [formGroup]="group">
+            <input type="text" kartInput formControlName="value" placeholder="e.g. Red" />
+            <input type="number" kartInput formControlName="displayOrder" placeholder="Order" />
+            <kart-button variant="secondary" type="button" (click)="removeValue($index)">Remove</kart-button>
+          </div>
+        }
+        <kart-button variant="secondary" type="button" (click)="addValue()">Add value</kart-button>
+      </div>
+    }
+  </form>
+
+  <div modalActions>
+    <kart-button variant="secondary" (click)="close()">Cancel</kart-button>
+    <kart-button variant="primary" [loading]="submitting()" (click)="submit()">Save</kart-button>
+  </div>
+</kart-modal>

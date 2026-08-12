@@ -14,8 +14,14 @@
  * (`/api/bff/analytics/*` routes in routes.ts are the only browser-reachable
  * surface for AUD-2).
  */
+import { logger } from '../logger';
+import { SERVICE_ENDPOINTS } from '../../app/core/config/service-endpoints';
+
+// kart-analytics-service is still an unscaffolded stub (no code yet) — it has no entry in
+// SERVICE_ENDPOINTS/kart-devops/ports.env since no canonical port has been assigned yet; this
+// literal fallback is a placeholder, not a copy of a value that exists anywhere else.
 const ANALYTICS_SERVICE_BASE_URL = process.env['ANALYTICS_SERVICE_BASE_URL'] ?? 'http://localhost:5295';
-const IDENTITY_SERVICE_BASE_URL = process.env['IDENTITY_SERVICE_BASE_URL'] ?? 'http://localhost:5200';
+const IDENTITY_SERVICE_BASE_URL = process.env['IDENTITY_SERVICE_BASE_URL'] ?? SERVICE_ENDPOINTS.identity;
 const ANALYTICS_CLIENT_ID = process.env['ANALYTICS_CLIENT_ID'] ?? '';
 const ANALYTICS_CLIENT_SECRET = process.env['ANALYTICS_CLIENT_SECRET'] ?? '';
 
@@ -31,11 +37,21 @@ async function getServiceToken(): Promise<string> {
     client_id: ANALYTICS_CLIENT_ID,
     client_secret: ANALYTICS_CLIENT_SECRET,
   });
-  const response = await fetch(`${IDENTITY_SERVICE_BASE_URL}/v1/auth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  });
+  const tokenUrl = `${IDENTITY_SERVICE_BASE_URL}/v1/auth/token`;
+  let response: Response;
+  try {
+    response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+  } catch (error) {
+    logger.error(
+      { err: error, url: tokenUrl },
+      'analyticsClient: service-token request threw — is kart-identity-service unreachable?',
+    );
+    throw error;
+  }
   const token = (await response.json()) as { accessToken: string; expiresIn: number };
   cachedToken = { accessToken: token.accessToken, expiresAtMs: Date.now() + token.expiresIn * 1_000 };
   return cachedToken.accessToken;
@@ -49,9 +65,16 @@ export async function fetchAnalytics<T>(path: string, query: Record<string, stri
       params.set(key, value);
     }
   }
-  const response = await fetch(`${ANALYTICS_SERVICE_BASE_URL}${path}?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const url = `${ANALYTICS_SERVICE_BASE_URL}${path}?${params.toString()}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch (error) {
+    logger.error({ err: error, url }, 'analyticsClient: request threw — is kart-analytics-service unreachable?');
+    throw error;
+  }
   const responseBody = (await response.json().catch(() => ({}))) as T;
   return { status: response.status, body: responseBody };
 }

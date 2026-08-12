@@ -7,10 +7,15 @@ export const catalogManagementRoutes: Routes = [
   {
     path: '',
     canActivate: [roleGuard('admin'), categoryGrantGuard('catalog-management')],
+    loadComponent: () => import('./catalog-shell/catalog-shell').then((m) => m.CatalogShell),
     children: [
       {
         path: 'categories',
         loadComponent: () => import('./category-management/category-tree/category-tree').then((m) => m.CategoryTree),
+      },
+      {
+        path: 'attributes',
+        loadComponent: () => import('./attribute-management/attribute-list/attribute-list').then((m) => m.AttributeList),
       },
       {
         path: 'products',

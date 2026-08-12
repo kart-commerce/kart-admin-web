@@ -1,9 +1,9 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { GATEWAY_BASE_PATH } from '../../../../base-path';
-import { OrderView, ResolveFulfillmentExceptionRequest } from '../model/models';
+import { Invoice, OrderSearchFilter, OrderView, PagedOrders, ResolveFulfillmentExceptionRequest } from '../model/models';
 
 /**
  * Typed client for kart-order-service's api-contract.yaml — this app only
@@ -22,6 +22,22 @@ export class OrderApiService {
 
   getOrder(orderId: string): Observable<OrderView> {
     return this.http.get<OrderView>(`${this.basePath}/orders/${encodeURIComponent(orderId)}`);
+  }
+
+  /** Order Management (Admin) flow #7 — AdminOnly-gated list/search view. */
+  listOrders(filter: OrderSearchFilter = {}): Observable<PagedOrders> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, String(value));
+      }
+    }
+    return this.http.get<PagedOrders>(`${this.basePath}/orders`, { params });
+  }
+
+  /** Order Management (Admin) flow #7 — AdminOnly-gated invoice view. */
+  getInvoice(orderId: string): Observable<Invoice> {
+    return this.http.get<Invoice>(`${this.basePath}/orders/${encodeURIComponent(orderId)}/invoice`);
   }
 
   resolveFulfillmentException(

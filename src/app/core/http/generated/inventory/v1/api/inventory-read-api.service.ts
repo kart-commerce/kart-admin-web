@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { GATEWAY_BASE_PATH } from '../../../../base-path';
-import { StockLevel } from '../model/models';
+import { OrderReservation, StockLevel } from '../model/models';
 
 @Injectable({ providedIn: 'root' })
 export class InventoryReadApiService {
@@ -16,5 +16,10 @@ export class InventoryReadApiService {
       params = params.set('warehouseId', warehouseId);
     }
     return this.http.get<StockLevel>(`${this.basePath}/inventory/${encodeURIComponent(sku)}`, { params });
+  }
+
+  /** Order Management (Admin) flow #7's read-only "Assign Warehouse" view. AdminOnly-gated. */
+  getOrderAllocations(orderId: string): Observable<OrderReservation[]> {
+    return this.http.get<OrderReservation[]>(`${this.basePath}/inventory/orders/${encodeURIComponent(orderId)}/allocations`);
   }
 }

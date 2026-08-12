@@ -1,0 +1,75 @@
+/*
+ * Themed elevated card, not `kart-alert` — see grants-degraded-toast.ts's doc comment.
+ * Every color here is a theme-aware --kart-color-* token, so light/dark both resolve
+ * correctly without a single dark-mode override needed in this file.
+ */
+.kart-grants-degraded-toast {
+  position: fixed;
+  top: var(--kart-spacing-lg);
+  right: var(--kart-spacing-lg);
+  z-index: 950;
+  display: flex;
+  max-width: 26rem;
+  overflow: hidden;
+  background-color: var(--kart-color-surface);
+  border: 1px solid var(--kart-color-border);
+  border-radius: var(--kart-radius-lg);
+  box-shadow: var(--kart-shadow-level-3);
+  animation: kart-grants-degraded-toast-in var(--kart-motion-duration-slow) var(--kart-motion-easing-standard);
+}
+
+@keyframes kart-grants-degraded-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kart-grants-degraded-toast {
+    animation: none;
+  }
+}
+
+.kart-grants-degraded-toast__accent {
+  flex: none;
+  width: 4px;
+  background-color: var(--kart-color-warning);
+}
+
+.kart-grants-degraded-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kart-spacing-sm);
+  padding: var(--kart-spacing-md) var(--kart-spacing-lg) var(--kart-spacing-md) var(--kart-spacing-md);
+  min-width: 0;
+}
+
+.kart-grants-degraded-toast__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--kart-spacing-sm);
+}
+
+.kart-grants-degraded-toast__icon {
+  flex: none;
+  color: var(--kart-color-warning);
+  font-size: var(--kart-font-size-heading-4);
+  line-height: 1;
+}
+
+.kart-grants-degraded-toast__message {
+  margin: 0;
+  color: var(--kart-color-text);
+  font-size: var(--kart-font-size-caption);
+  line-height: var(--kart-line-height-body);
+}
+
+.kart-grants-degraded-toast__actions {
+  display: flex;
+  justify-content: flex-end;
+}

@@ -1,8 +1,10 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { join } from 'node:path';
 
+import { gatewayProxyRouter } from './server/bff/gateway-proxy';
 import { bffRouter } from './server/bff/routes';
 import { securityHeaders } from './server/bff/security-headers';
+import { logger } from './server/logger';
 
 /**
  * This app is CSR-only (architecture.md §2 — no SSR tier), so unlike
@@ -22,10 +24,33 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 
+/**
+ * Express's own `trust proxy` setting — governs `req.ip` (used by `rate-limit-middleware.ts` to
+ * key login/refresh throttling per caller). Defaults to `false` (trust nothing, use the literal
+ * socket address) rather than guessing a hop count, since trusting a spoofable
+ * `X-Forwarded-For` header with no reverse proxy actually in front of this process would let any
+ * caller forge their own rate-limit identity for free. Set `TRUST_PROXY` to the number of
+ * reverse-proxy hops in front of this process in any real deployment (typically `1` for a single
+ * ingress/load balancer) — Express accepts a hop count, `true`/`false`, or a CSV of trusted
+ * IPs/subnets, all supported here by passing the env value straight through.
+ */
+function resolveTrustProxySetting(value: string | undefined): boolean | number | string {
+  if (!value) {
+    return false;
+  }
+  if (value === 'true' || value === 'false') {
+    return value === 'true';
+  }
+  const hops = Number(value);
+  return Number.isFinite(hops) ? hops : value;
+}
+app.set('trust proxy', resolveTrustProxySetting(process.env['TRUST_PROXY']));
+
 app.use(securityHeaders);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false })); // SAML ACS posts SAMLResponse as application/x-www-form-urlencoded
 app.use('/api/bff', bffRouter);
+app.use('/api/bff/gateway', gatewayProxyRouter);
 
 /**
  * Single error-handling boundary for the BFF routes (kart-conventions.md's
@@ -35,7 +60,7 @@ app.use('/api/bff', bffRouter);
  * stack trace.
  */
 app.use('/api/bff', (error: unknown, req: Request, res: Response, _next: NextFunction) => {
-  console.error('BFF request failed', { path: req.path, error });
+  logger.error({ err: error, path: req.path }, 'BFF request failed');
   res.status(502).json({ code: 'upstream_unavailable', message: 'A dependent service is unavailable.' });
 });
 
@@ -56,5 +81,5 @@ app.get('/{*splat}', (_req, res) => {
 
 const port = process.env['PORT'] || 4000;
 app.listen(port, () => {
-  console.log(`kart-admin-web BFF listening on http://localhost:${port}`);
+  logger.info({ port }, `kart-admin-web BFF listening on http://localhost:${port}`);
 });

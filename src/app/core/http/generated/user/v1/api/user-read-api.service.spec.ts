@@ -18,7 +18,7 @@ describe('UserReadApiService', () => {
 
   it('getUserProfile() GETs /users/{userId}', () => {
     service.getUserProfile('user-1').subscribe();
-    const req = httpMock.expectOne('/v1/users/user-1');
+    const req = httpMock.expectOne('/api/bff/gateway/v1/users/user-1');
     expect(req.request.method).toBe('GET');
     req.flush({});
   });

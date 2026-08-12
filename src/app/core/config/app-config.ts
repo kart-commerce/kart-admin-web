@@ -1,5 +1,7 @@
 import { InjectionToken } from '@angular/core';
 
+import { SERVICE_ENDPOINTS } from './service-endpoints';
+
 /**
  * Runtime, environment-driven configuration. This app is CSR-only
  * (architecture.md §2 — no SSR tier), so there is no TransferState hydration
@@ -30,7 +32,7 @@ export interface AppConfig {
 }
 
 export const DEFAULT_APP_CONFIG: AppConfig = {
-  gatewayBaseUrl: 'http://localhost:5290',
+  gatewayBaseUrl: SERVICE_ENDPOINTS.gateway,
   session: {
     idleTimeoutMinutes: { admin: 15, support_agent: 20 },
     absoluteCapHours: { admin: 24, support_agent: 8 },
