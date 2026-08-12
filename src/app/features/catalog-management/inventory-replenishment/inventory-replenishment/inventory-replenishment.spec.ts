@@ -9,7 +9,14 @@ describe('InventoryReplenishment', () => {
   let service: jasmine.SpyObj<InventoryReplenishmentService>;
 
   beforeEach(() => {
-    service = jasmine.createSpyObj('InventoryReplenishmentService', ['getStockLevel', 'replenish']);
+    service = jasmine.createSpyObj('InventoryReplenishmentService', [
+      'getStockLevel',
+      'replenish',
+      'provision',
+      'updateThreshold',
+      'reconcile',
+      'getLowStock',
+    ]);
     TestBed.configureTestingModule({
       imports: [InventoryReplenishment],
       providers: [
@@ -65,5 +72,74 @@ describe('InventoryReplenishment', () => {
 
     expect(service.replenish).toHaveBeenCalledWith('SKU-1', { warehouseId: 'wh-1', qtyAdded: 10, reason: 'Restock' });
     expect(service.getStockLevel).toHaveBeenCalledTimes(2);
+  });
+
+  it('provisions a new warehouse/SKU row', () => {
+    service.provision.and.returnValue(of(undefined));
+    service.getStockLevel.and.returnValue(of({ sku: 'SKU-NEW', warehouseId: 'wh-1', availableQty: 10 }));
+    const fixture = TestBed.createComponent(InventoryReplenishment);
+    fixture.detectChanges();
+
+    fixture.componentInstance['provisionForm'].setValue({
+      warehouseId: 'wh-1',
+      sku: 'SKU-NEW',
+      initialQty: 10,
+      replenishmentThreshold: 2,
+      targetStockingLevel: 20,
+    });
+    fixture.componentInstance.provision();
+
+    expect(service.provision).toHaveBeenCalledWith({
+      warehouseId: 'wh-1',
+      sku: 'SKU-NEW',
+      initialQty: 10,
+      replenishmentThreshold: 2,
+      targetStockingLevel: 20,
+    });
+    expect(fixture.componentInstance['provisionSuccess']()).toContain('SKU-NEW');
+  });
+
+  it('updates the threshold for a warehouse-scoped lookup', () => {
+    service.getStockLevel.and.returnValue(of({ sku: 'SKU-1', warehouseId: 'wh-1', availableQty: 42 }));
+    service.updateThreshold.and.returnValue(of(undefined));
+    const fixture = TestBed.createComponent(InventoryReplenishment);
+    fixture.detectChanges();
+
+    fixture.componentInstance['lookupForm'].setValue({ sku: 'SKU-1', warehouseId: 'wh-1' });
+    fixture.componentInstance.lookup();
+    fixture.detectChanges();
+
+    fixture.componentInstance['thresholdForm'].setValue({ replenishmentThreshold: 5, targetStockingLevel: 50 });
+    fixture.componentInstance.updateThreshold();
+
+    expect(service.updateThreshold).toHaveBeenCalledWith('wh-1', 'SKU-1', { replenishmentThreshold: 5, targetStockingLevel: 50 });
+  });
+
+  it('reconciles stock for a warehouse-scoped lookup and reports the variance', () => {
+    service.getStockLevel.and.returnValue(of({ sku: 'SKU-1', warehouseId: 'wh-1', availableQty: 40 }));
+    service.reconcile.and.returnValue(of(undefined));
+    const fixture = TestBed.createComponent(InventoryReplenishment);
+    fixture.detectChanges();
+
+    fixture.componentInstance['lookupForm'].setValue({ sku: 'SKU-1', warehouseId: 'wh-1' });
+    fixture.componentInstance.lookup();
+    fixture.detectChanges();
+
+    fixture.componentInstance['reconcileForm'].setValue({ countedQty: 55, reason: 'cycle count' });
+    fixture.componentInstance.reconcile();
+
+    expect(service.reconcile).toHaveBeenCalledWith('wh-1', 'SKU-1', { countedQty: 55, reason: 'cycle count' });
+    expect(fixture.componentInstance['reconcileSuccess']()).toContain('+15');
+  });
+
+  it('loads reorder alerts', () => {
+    service.getLowStock.and.returnValue(of([{ sku: 'SKU-1', warehouseId: 'wh-1', availableQty: 1 }]));
+    const fixture = TestBed.createComponent(InventoryReplenishment);
+    fixture.detectChanges();
+
+    fixture.componentInstance.loadLowStock();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['lowStock']()).toEqual([{ sku: 'SKU-1', warehouseId: 'wh-1', availableQty: 1 }]);
   });
 });

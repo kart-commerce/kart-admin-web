@@ -134,6 +134,27 @@ export interface ReplenishInventoryRequest {
   reason?: string;
 }
 
+/** Inventory & Stock Management flow: onboards a brand-new (warehouseId, sku) row. */
+export interface ProvisionWarehouseStockRequest {
+  warehouseId: string;
+  sku: string;
+  initialQty: number;
+  replenishmentThreshold: number;
+  targetStockingLevel: number;
+}
+
+/** Inventory & Stock Management flow's "Low Stock Threshold" stage. */
+export interface UpdateReplenishmentThresholdRequest {
+  replenishmentThreshold: number;
+  targetStockingLevel: number;
+}
+
+/** Inventory & Stock Management flow's "Stock Audit/Reconciliation" and "Update Qty" stages. */
+export interface ReconcileStockRequest {
+  countedQty: number;
+  reason: string;
+}
+
 export interface LockUserRequest {
   reason?: string;
 }

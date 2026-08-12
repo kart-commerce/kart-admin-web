@@ -22,4 +22,13 @@ export class InventoryReadApiService {
   getOrderAllocations(orderId: string): Observable<OrderReservation[]> {
     return this.http.get<OrderReservation[]>(`${this.basePath}/inventory/orders/${encodeURIComponent(orderId)}/allocations`);
   }
+
+  /** Inventory & Stock Management flow's "Reorder Alert" dashboard view - every SKU/warehouse currently below its own replenishment threshold. Public read, same posture as getStockLevel. */
+  getLowStock(warehouseId?: string): Observable<StockLevel[]> {
+    let params = new HttpParams();
+    if (warehouseId) {
+      params = params.set('warehouseId', warehouseId);
+    }
+    return this.http.get<StockLevel[]>(`${this.basePath}/inventory/low-stock`, { params });
+  }
 }

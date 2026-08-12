@@ -1,9 +1,10 @@
 <div class="kart-page">
   <div class="kart-page__header">
-    <h1>Inventory Replenishment</h1>
+    <h1>Inventory Management</h1>
   </div>
 
   <kart-card>
+    <h2>View Stock by Warehouse</h2>
     <form [formGroup]="lookupForm" (ngSubmit)="lookup()">
       <div class="kart-form-row">
         <kart-form-field label="SKU" inputId="inventory-sku">
@@ -30,6 +31,8 @@
         Available: <strong>{{ stock.availableQty }}</strong>
         @if (stock.warehouseId) {
           <span> at warehouse {{ stock.warehouseId }}</span>
+        } @else {
+          <span> (summed across every warehouse — look up with a specific warehouse ID to replenish, update its threshold, or reconcile it)</span>
         }
       </p>
 
@@ -65,5 +68,159 @@
         </div>
       </form>
     </kart-card>
+
+    @if (stock.warehouseId) {
+      <kart-card>
+        <h2>Low Stock Threshold</h2>
+
+        @if (thresholdSuccess()) {
+          <kart-alert variant="success">{{ thresholdSuccess() }}</kart-alert>
+        }
+        @if (thresholdError()) {
+          <kart-alert variant="danger">{{ thresholdError() }}</kart-alert>
+        }
+
+        <form [formGroup]="thresholdForm" (ngSubmit)="updateThreshold()" *kartRequiresGrant="'inventory-replenishment'">
+          <div class="kart-form-row">
+            <kart-form-field
+              label="Replenishment threshold"
+              inputId="threshold-value"
+              hint="A Reorder Alert fires whenever available stock drops below this."
+              [error]="thresholdForm.controls.replenishmentThreshold.invalid && thresholdForm.controls.replenishmentThreshold.touched ? 'Enter a threshold of 0 or more.' : null"
+            >
+              <input id="threshold-value" type="number" min="0" kartInput formControlName="replenishmentThreshold" />
+            </kart-form-field>
+            <kart-form-field
+              label="Target stocking level"
+              inputId="threshold-target"
+              [error]="thresholdForm.controls.targetStockingLevel.invalid && thresholdForm.controls.targetStockingLevel.touched ? 'Enter a target of at least 1.' : null"
+            >
+              <input id="threshold-target" type="number" min="1" kartInput formControlName="targetStockingLevel" />
+            </kart-form-field>
+          </div>
+          <div class="kart-form-actions">
+            <kart-button type="submit" variant="secondary" [loading]="updatingThreshold()">Update threshold</kart-button>
+          </div>
+        </form>
+      </kart-card>
+
+      <kart-card>
+        <h2>Stock Audit / Reconciliation</h2>
+        <p>Overwrite available quantity to a physical count. Also used for correcting stock (Update Qty).</p>
+
+        @if (reconcileSuccess()) {
+          <kart-alert variant="success">{{ reconcileSuccess() }}</kart-alert>
+        }
+        @if (reconcileError()) {
+          <kart-alert variant="danger">{{ reconcileError() }}</kart-alert>
+        }
+
+        <form [formGroup]="reconcileForm" (ngSubmit)="reconcile()" *kartRequiresGrant="'inventory-replenishment'">
+          <div class="kart-form-row">
+            <kart-form-field
+              label="Counted quantity"
+              inputId="reconcile-qty"
+              [error]="reconcileForm.controls.countedQty.invalid && reconcileForm.controls.countedQty.touched ? 'Enter a counted quantity of 0 or more.' : null"
+            >
+              <input id="reconcile-qty" type="number" min="0" kartInput formControlName="countedQty" />
+            </kart-form-field>
+            <kart-form-field
+              label="Reason"
+              inputId="reconcile-reason"
+              hint="e.g. cycle count, shrinkage, damaged-goods write-off."
+              [error]="reconcileForm.controls.reason.invalid && reconcileForm.controls.reason.touched ? 'A reason is required.' : null"
+            >
+              <input id="reconcile-reason" type="text" kartInput formControlName="reason" />
+            </kart-form-field>
+          </div>
+          <div class="kart-form-actions">
+            <kart-button type="submit" variant="secondary" [loading]="reconciling()">Reconcile</kart-button>
+          </div>
+        </form>
+      </kart-card>
+    }
   }
+
+  <kart-card>
+    <h2>Onboard a New Warehouse/SKU Row</h2>
+    <p>Provisions stock for a (warehouse, SKU) pair that has never been tracked before.</p>
+
+    @if (provisionSuccess()) {
+      <kart-alert variant="success">{{ provisionSuccess() }}</kart-alert>
+    }
+    @if (provisionError()) {
+      <kart-alert variant="danger">{{ provisionError() }}</kart-alert>
+    }
+
+    <form [formGroup]="provisionForm" (ngSubmit)="provision()" *kartRequiresGrant="'inventory-replenishment'">
+      <div class="kart-form-row">
+        <kart-form-field
+          label="Warehouse ID"
+          inputId="provision-warehouse"
+          [error]="provisionForm.controls.warehouseId.invalid && provisionForm.controls.warehouseId.touched ? 'Warehouse ID is required.' : null"
+        >
+          <input id="provision-warehouse" type="text" kartInput formControlName="warehouseId" />
+        </kart-form-field>
+        <kart-form-field
+          label="SKU"
+          inputId="provision-sku"
+          [error]="provisionForm.controls.sku.invalid && provisionForm.controls.sku.touched ? 'SKU is required.' : null"
+        >
+          <input id="provision-sku" type="text" kartInput formControlName="sku" />
+        </kart-form-field>
+      </div>
+      <div class="kart-form-row">
+        <kart-form-field label="Initial quantity" inputId="provision-qty">
+          <input id="provision-qty" type="number" min="0" kartInput formControlName="initialQty" />
+        </kart-form-field>
+        <kart-form-field label="Replenishment threshold" inputId="provision-threshold">
+          <input id="provision-threshold" type="number" min="0" kartInput formControlName="replenishmentThreshold" />
+        </kart-form-field>
+        <kart-form-field label="Target stocking level" inputId="provision-target">
+          <input id="provision-target" type="number" min="1" kartInput formControlName="targetStockingLevel" />
+        </kart-form-field>
+      </div>
+      <div class="kart-form-actions">
+        <kart-button type="submit" variant="primary" [loading]="provisioning()">Provision</kart-button>
+      </div>
+    </form>
+  </kart-card>
+
+  <kart-card>
+    <h2>Reorder Alerts</h2>
+    <p>Every SKU/warehouse currently below its own replenishment threshold.</p>
+
+    <div class="kart-form-actions">
+      <kart-button type="button" variant="secondary" [loading]="loadingLowStock()" (click)="loadLowStock()">Refresh reorder alerts</kart-button>
+    </div>
+
+    @if (lowStockLoaded()) {
+      <kart-data-table-shell
+        [loading]="loadingLowStock()"
+        [errorMessage]="lowStockError()"
+        [empty]="!loadingLowStock() && !lowStockError() && lowStock().length === 0"
+        emptyTitle="No reorder alerts"
+        emptyDescription="No SKU/warehouse is currently below its replenishment threshold."
+      >
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Warehouse</th>
+              <th>Available Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of lowStock(); track row.sku + row.warehouseId) {
+              <tr>
+                <td>{{ row.sku }}</td>
+                <td>{{ row.warehouseId }}</td>
+                <td>{{ row.availableQty }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </kart-data-table-shell>
+    }
+  </kart-card>
 </div>
