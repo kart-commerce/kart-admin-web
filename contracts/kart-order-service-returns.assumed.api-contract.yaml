@@ -91,6 +91,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ReturnRequest' }
         '404':
+          description: No ReturnRequest exists with this id.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Problem' }

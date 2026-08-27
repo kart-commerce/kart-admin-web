@@ -1,0 +1,10 @@
+@if (visualization().type === 'single_stat') {
+  @if (singleStatValue(); as value) {
+    <div class="kart-assistant-chart__single-stat">
+      <div class="kart-assistant-chart__single-stat-value">{{ value }}</div>
+      <div class="kart-assistant-chart__single-stat-title">{{ visualization().title }}</div>
+    </div>
+  }
+} @else if (chartOption(); as option) {
+  <div echarts [options]="option" class="kart-assistant-chart__canvas"></div>
+}

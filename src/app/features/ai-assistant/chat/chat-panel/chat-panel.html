@@ -1,0 +1,84 @@
+<div class="kart-page">
+  <div class="kart-page__header">
+    <h1>AI Assistant</h1>
+  </div>
+
+  <div class="kart-chat">
+    <div class="kart-chat__transcript">
+      @if (messages().length === 0) {
+        <p class="kart-chat__hint">Ask a business question, e.g. "top 5 selling products in the last 7 days".</p>
+      }
+
+      @for (message of messages(); track $index) {
+        <div class="kart-chat__message" [class.kart-chat__message--user]="message.role === 'user'" [class.kart-chat__message--assistant]="message.role === 'assistant'">
+          @if (message.role === 'user') {
+            <p>{{ message.text }}</p>
+          } @else if (message.unrecognizedShape) {
+            <kart-alert variant="danger">Couldn't process this response. Please try rephrasing your question.</kart-alert>
+          } @else if (message.errorMessage) {
+            <kart-alert variant="danger">{{ message.errorMessage }}</kart-alert>
+          } @else if (message.clarificationOptions) {
+            <p>{{ message.text }}</p>
+            <div class="kart-chat__options">
+              @for (option of message.clarificationOptions; track option) {
+                <kart-button variant="secondary" [disabled]="loading()" (click)="selectClarificationOption(option)">{{ option }}</kart-button>
+              }
+            </div>
+          } @else {
+            <p>{{ message.text }}</p>
+
+            @if (message.isProvisional) {
+              <kart-badge variant="warning">
+                Provisional{{ message.reconciledThrough ? ' — reconciled through ' + message.reconciledThrough : '' }}
+              </kart-badge>
+            }
+
+            @if (message.data) {
+              <kart-data-table-shell [empty]="message.data.rows.length === 0" emptyTitle="No results for this query">
+                <table>
+                  <thead>
+                    <tr>
+                      @for (column of message.data.columns; track column) {
+                        <th>{{ column }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of message.data.rows; track $index) {
+                      <tr>
+                        @for (cell of row; track $index) {
+                          <td>{{ cell }}</td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </kart-data-table-shell>
+            }
+
+            @if (message.visualization && message.visualization.type !== 'table_only') {
+              <kart-assistant-chart [visualization]="message.visualization" [data]="message.data!" />
+            }
+          }
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="kart-chat__message kart-chat__message--assistant kart-chat__message--pending">Thinking…</div>
+      }
+    </div>
+
+    <form class="kart-chat__composer" (ngSubmit)="submit(draft)">
+      <input
+        type="text"
+        kartInput
+        name="draft"
+        placeholder="Ask a business question…"
+        [(ngModel)]="draft"
+        [disabled]="loading()"
+        autocomplete="off"
+      />
+      <kart-button type="submit" variant="primary" [loading]="loading()" [disabled]="loading() || !draft.trim()">Send</kart-button>
+    </form>
+  </div>
+</div>

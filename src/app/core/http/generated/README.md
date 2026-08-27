@@ -1,7 +1,8 @@
 # core/http/generated
 
 Typed HTTP clients for every backend contract this app calls, one folder per service
-(`admin/v1`, `order/v1`, `payment/v1`, `analytics/v1`, `order-returns/v1`), mirroring
+(`admin/v1`, `order/v1`, `payment/v1`, `analytics/v1`, `order-returns/v1`, `ai-assistant/v1`,
+plus `category/v1`/`product/v1`/`search/v1`/`inventory/v1`/`user/v1`), mirroring
 kart-web's `core/http/generated/category/v1` pattern — one Angular service per contract,
 models typed 1:1 against each contract's schemas, injected via `GATEWAY_BASE_PATH`
 (`../base-path.ts`) rather than a hardcoded base URL.
