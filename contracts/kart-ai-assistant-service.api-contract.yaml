@@ -457,13 +457,19 @@ components:
         data:
           type: object
           nullable: true
-          enum: [null]
-          description: Always `null` for this response type (§15.3).
+          description: >
+            Always `null` for this response type (§15.3). Not `enum: [null]`
+            — openapi-generator-cli v7.9.0's typescript-angular generator
+            emits an invalid empty union type (`export type DataEnum = ;`)
+            for `type: object` + `enum: [null]`; plain `nullable: true`
+            conveys the same "always null" contract without tripping that
+            generator bug.
         visualization:
           type: object
           nullable: true
-          enum: [null]
-          description: Always `null` for this response type (§15.3).
+          description: >
+            Always `null` for this response type (§15.3). See `data`'s note
+            on why this isn't `enum: [null]`.
 
     AssistantErrorResponse:
       type: object
@@ -512,13 +518,16 @@ components:
         data:
           type: object
           nullable: true
-          enum: [null]
-          description: Always `null` for this response type.
+          description: >
+            Always `null` for this response type. Not `enum: [null]` — see
+            `AssistantClarificationResponse.data`'s note on the
+            openapi-generator-cli v7.9.0 bug that pattern trips.
         visualization:
           type: object
           nullable: true
-          enum: [null]
-          description: Always `null` for this response type.
+          description: >
+            Always `null` for this response type. See `data`'s note on why
+            this isn't `enum: [null]`.
 
     AssistantResultTable:
       type: object

@@ -61,6 +61,10 @@ web_modules/
 
 # Output of 'npm pack'
 *.tgz
+# ...except the vendored design-system package: package.json/package-lock.json pin it via
+# `file:vendor/design-system-0.0.1.tgz`, so npm ci needs this actually committed, not ignored
+# (its absence is why "Install dependencies (npm ci)" has been failing in CI).
+!vendor/design-system-0.0.1.tgz
 
 # Yarn Integrity file
 .yarn-integrity
