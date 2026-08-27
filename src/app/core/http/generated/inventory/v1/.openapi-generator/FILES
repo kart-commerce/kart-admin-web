@@ -1,0 +1,16 @@
+.gitignore
+README.md
+api.module.ts
+api/api.ts
+api/default.service.ts
+configuration.ts
+encoder.ts
+git_push.sh
+model/problem.ts
+model/releaseReservationRequest.ts
+model/reservation.ts
+model/reservationAllocationsInner.ts
+model/reserveStockRequest.ts
+model/stockLevel.ts
+param.ts
+variables.ts

@@ -38,6 +38,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/audit-compliance/audit-compliance.routes').then((m) => m.auditComplianceRoutes),
   },
   {
+    path: 'ai-assistant',
+    canActivate: [authenticatedGuard],
+    loadChildren: () => import('./features/ai-assistant/ai-assistant.routes').then((m) => m.aiAssistantRoutes),
+  },
+  {
     path: '',
     canActivate: [authenticatedGuard],
     loadComponent: () => import('./core/dashboard/dashboard').then((m) => m.Dashboard),

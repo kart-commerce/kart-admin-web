@@ -14,6 +14,12 @@
       @if (grantService.isSupportAgent()) {
         <a routerLink="/support-console" routerLinkActive="kart-header__link--active">Support Console</a>
       }
+      <!--
+        requirement-spec.md §3.6 — Admin and Support Agent, identical access,
+        no role differentiation, so this entry (unlike every link above) is
+        not wrapped in either role's `@if` gate.
+      -->
+      <a routerLink="/ai-assistant" routerLinkActive="kart-header__link--active">AI Assistant</a>
     </nav>
 
     <div class="kart-header__account">

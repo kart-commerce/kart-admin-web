@@ -34,8 +34,8 @@
     </kart-form-field>
 
     @if (isSelectType) {
-      <div class="kart-attribute-form__values">
-        <label>Values</label>
+      <fieldset class="kart-attribute-form__values">
+        <legend>Values</legend>
         @for (group of valuesArray.controls; track $index) {
           <div class="kart-form-row" [formGroup]="group">
             <input type="text" kartInput formControlName="value" placeholder="e.g. Red" />
@@ -44,7 +44,7 @@
           </div>
         }
         <kart-button variant="secondary" type="button" (click)="addValue()">Add value</kart-button>
-      </div>
+      </fieldset>
     }
   </form>
 

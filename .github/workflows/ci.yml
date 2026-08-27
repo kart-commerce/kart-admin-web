@@ -105,3 +105,11 @@ jobs:
       contract-path: contracts/kart-order-service-returns.assumed.api-contract.yaml
       output-dir: src/app/core/http/generated/order-returns/v1
       fail-on-diff: true
+
+  ai-assistant-client-codegen:
+    name: Verify generated ai-assistant-service client is up to date
+    uses: kart-commerce/kart-devops/.github/workflows/openapi-client-codegen.yml@main
+    with:
+      contract-path: contracts/kart-ai-assistant-service.api-contract.yaml
+      output-dir: src/app/core/http/generated/ai-assistant/v1
+      fail-on-diff: true

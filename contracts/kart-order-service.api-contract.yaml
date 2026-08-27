@@ -108,10 +108,12 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '200':
+          description: The order's current state.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OrderView' }
         '404':
+          description: No order exists with this id.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -151,6 +153,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Problem' }
         '404':
+          description: No order exists with this id.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -213,6 +216,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Problem' }
         '404':
+          description: No order exists with this id.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Problem' }
