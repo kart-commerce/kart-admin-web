@@ -23,7 +23,8 @@ export interface OrderReservation {
   orderId: string;
   sku: string;
   qty: number;
-  status: 'reserved' | 'released' | 'expired';
+  /** `committed` (Inventory & Stock Management flow) means the order backing this reservation has been paid - no longer subject to the TTL sweep, but still releasable on a later admin cancellation. */
+  status: 'reserved' | 'committed' | 'released' | 'expired';
   allocations: WarehouseAllocation[];
   expiresAt: string;
 }

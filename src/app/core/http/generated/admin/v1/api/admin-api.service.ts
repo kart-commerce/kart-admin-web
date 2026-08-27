@@ -20,8 +20,11 @@ import {
   PrivacyRequest,
   PrivacyRequestStatus,
   ProductWriteRequest,
+  ProvisionWarehouseStockRequest,
+  ReconcileStockRequest,
   ReplenishInventoryRequest,
   ShippingAddressWriteRequest,
+  UpdateReplenishmentThresholdRequest,
 } from '../model/models';
 
 /**
@@ -201,6 +204,36 @@ export class AdminApiService {
   replenishInventory(sku: string, request: ReplenishInventoryRequest, idempotencyKey: string): Observable<AdminActionResult> {
     return this.http.post<AdminActionResult>(
       `${this.basePath}/admin/inventory/${encodeURIComponent(sku)}/replenish`,
+      request,
+      { headers: this.idempotencyHeaders(idempotencyKey) },
+    );
+  }
+
+  /** Inventory & Stock Management flow: onboards a brand-new (warehouseId, sku) row. */
+  provisionWarehouseStock(request: ProvisionWarehouseStockRequest, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.post<AdminActionResult>(`${this.basePath}/admin/inventory/provision`, request, {
+      headers: this.idempotencyHeaders(idempotencyKey),
+    });
+  }
+
+  /** Inventory & Stock Management flow's "Low Stock Threshold" stage. */
+  updateReplenishmentThreshold(
+    warehouseId: string,
+    sku: string,
+    request: UpdateReplenishmentThresholdRequest,
+    idempotencyKey: string,
+  ): Observable<AdminActionResult> {
+    return this.http.patch<AdminActionResult>(
+      `${this.basePath}/admin/inventory/${encodeURIComponent(warehouseId)}/${encodeURIComponent(sku)}/threshold`,
+      request,
+      { headers: this.idempotencyHeaders(idempotencyKey) },
+    );
+  }
+
+  /** Inventory & Stock Management flow's "Stock Audit/Reconciliation" and "Update Qty" stages. */
+  reconcileStock(warehouseId: string, sku: string, request: ReconcileStockRequest, idempotencyKey: string): Observable<AdminActionResult> {
+    return this.http.post<AdminActionResult>(
+      `${this.basePath}/admin/inventory/${encodeURIComponent(warehouseId)}/${encodeURIComponent(sku)}/reconcile`,
       request,
       { headers: this.idempotencyHeaders(idempotencyKey) },
     );
